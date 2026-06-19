@@ -23,7 +23,7 @@
                         <li><a class="dropdown-item" href="/form/resep">E-Resep</a></li>
                         <li><a class="dropdown-item" href="/form/planning">Discharge Planning</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item fw-bold text-primary" href="/form/pulang">Ringkasan Pulang</a></li>
+                        <li><a class="dropdown-item fw-bold text-primary" href="/form/eresume">E-Resume</a></li>
                     </ul>
                 </li>
                 <li class="nav-item"><a class="nav-link text-warning fw-bold" href="/dashboard">Dashboard Laporan</a></li>
