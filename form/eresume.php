@@ -1,9 +1,13 @@
 <?php
+// 1. Tampilkan Error
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);    
 // ==========================================
 // 1. PANGGIL FILE KONEKSI DATABASE
 // ==========================================
 // Pastikan path-nya benar (sesuaikan jika file eresume.php ada di dalam folder yang sama/berbeda)
-require 'backend/koneksi.php';
+include __DIR__ . '/koneksi.php';
 
 // ==========================================
 // 2. AMBIL DATA DARI TABEL
