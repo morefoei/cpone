@@ -86,7 +86,7 @@ if (!$result) {
                                 <td><?= htmlspecialchars($row['dpjp_utama'] ?? '-') ?></td>
                                 <td><?= htmlspecialchars($row['kondisi_pulang'] ?? '-') ?></td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-primary">Lihat Detail</button>
+                                    <a href="detail_resume.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-outline-primary">Lihat Detail</a>
                                 </td>
                             </tr>
                             <?php
