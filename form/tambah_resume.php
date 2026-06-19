@@ -1,6 +1,13 @@
 <?php
+// ==========================================
+// NYALAKAN PENAMPIL ERROR
+// ==========================================
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 // Panggil koneksi database
-require 'backend/koneksi.php';
+include dirname(__DIR__) . '/backend/koneksi.php';
 
 // Cek apakah tombol submit sudah ditekan
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -13,7 +20,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $dpjp_utama     = mysqli_real_escape_string($koneksi, $_POST['dpjp_utama']);
     $kondisi_pulang = mysqli_real_escape_string($koneksi, $_POST['kondisi_pulang']);
 
-    // Query untuk memasukkan data ke tabel
+    // ==========================================
+    // PERHATIAN: GANTI NAMA TABEL DI BAWAH INI!
+    // ==========================================
+    // Ganti kata 'tabel_resume_medis' dengan nama tabel asli Anda
     $query = "INSERT INTO tabel_resume_medis (nomor_rm, nama_pasien, tgl_masuk, tgl_keluar, diagnosa_utama, dpjp_utama, kondisi_pulang) 
               VALUES ('$nomor_rm', '$nama_pasien', '$tgl_masuk', '$tgl_keluar', '$diagnosa_utama', '$dpjp_utama', '$kondisi_pulang')";
 
@@ -26,7 +36,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
               </script>";
         exit;
     } else {
-        echo "Gagal menambahkan data: " . mysqli_error($koneksi);
+        echo "<div class='alert alert-danger m-3'>Gagal menambahkan data: " . mysqli_error($koneksi) . "</div>";
     }
 }
 ?>
