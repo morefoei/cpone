@@ -39,8 +39,8 @@ $data = mysqli_fetch_assoc($result);
             <h3 class="mb-0">Detail Resume Medis</h3>
             <div>
                 <a href="eresume.php" class="btn btn-secondary me-2">Kembali</a>
-                <a href="export_detail.php?id=<?= $data['id'] ?>" class="btn btn-success">
-                    Export Excel
+                <a href="cetak_resume.php?id=<?= $data['id'] ?>" target="_blank" class="btn btn-danger">
+                    🖨️ Cetak Form (PDF)
                 </a>
             </div>
         </div>
