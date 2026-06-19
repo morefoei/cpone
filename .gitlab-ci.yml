@@ -1,0 +1,17 @@
+stages:
+  - deploy
+
+deploy:
+  stage: deploy
+  image: alpine:latest
+  script:
+    # --- TAMBAHKAN BARIS INI SEBAGAI SOLUSI SEMENTARA ---
+    - echo "nameserver 8.8.8.8" > /etc/resolv.conf
+    # ----------------------------------------------------
+    
+    - apk add --no-cache lftp
+    
+    # Tambahkan opsi --no-perms agar lftp tidak mencoba mengubah hak akses file
+    - lftp -c "set ftp:ssl-allow no; open -u $FTP_USERNAME,$FTP_PASSWORD $FTP_SERVER; mirror -Rnv ./ /htdocs --ignore-time --parallel=10 --no-perms --exclude-glob .git* --exclude .gitlab-ci.yml"
+  only:
+    - main
