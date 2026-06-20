@@ -17,7 +17,7 @@
         <p class="lead mt-3">Sistem Informasi Rekam Medis Elektronik Terintegrasi - Capstone RMIK Universitas Esa Unggul.</p>
         <hr class="my-4">
         <p>Gunakan menu di atas untuk mulai mengisi resume medis pasien atau melihat peta persebaran kasus.</p>
-        <a class="btn btn-primary btn-lg mt-3" href="/form" role="button">Mulai Isi Form</a>
+        <a class="btn btn-primary btn-lg mt-3" href="/form/eresume" role="button">Mulai Isi Form</a>
     </div>
 </div>
 

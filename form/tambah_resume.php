@@ -270,11 +270,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
                 <div class="col-md-3 mb-3">
                     <label class="form-label">Tanggal Keluar</label>
-                    <input type="date" name="tgl_keluar" class="form-control" value="<?= formValue($editData, 'tgl_keluar') ?>">
+                    <input type="date" name="tgl_keluar" id="tglKeluarInput" class="form-control" value="<?= formValue($editData, 'tgl_keluar') ?>">
                 </div>
                 <div class="col-md-3 mb-3">
                     <label class="form-label">Lama Dirawat (Hari)</label>
-                    <input type="number" name="lama_dirawat" class="form-control" value="<?= formValue($editData, 'lama_dirawat') ?>">
+                    <input type="number" name="lama_dirawat" id="lamaDirawatInput" class="form-control bg-light" value="<?= formValue($editData, 'lama_dirawat') ?>" readonly>
                 </div>
                 <div class="col-md-3 mb-3">
                     <label class="form-label">Ruang Rawat</label>
@@ -478,6 +478,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     const tanggalLahirInput = document.getElementById('tanggalLahirInput');
     const jenisKelaminSelect = document.getElementById('jenisKelaminSelect');
     const tglMasukInput = document.getElementById('tglMasukInput');
+    const tglKeluarInput = document.getElementById('tglKeluarInput');
+    const lamaDirawatInput = document.getElementById('lamaDirawatInput');
     const diagnosaMasukInput = document.getElementById('diagnosaMasukInput');
     const dpjpUtamaSearch = document.getElementById('dpjpUtamaSearch');
     const dpjpUtamaSelect = document.getElementById('dpjpUtamaSelect');
@@ -506,6 +508,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         jenisKelaminSelect.value = registrasi ? registrasi.jenis_kelamin : 'L';
         tglMasukInput.value = registrasi ? registrasi.tgl_masuk : '';
         diagnosaMasukInput.value = registrasi ? registrasi.penyakit : '';
+        
+        updateLamaDirawat();
     }
 
     function updateDpjpUtamaPreview() {
@@ -528,6 +532,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         dpjpUtamaPreview.innerHTML = signatureHtml + '<div>' + dokter.barcode + '</div><small class="text-muted">' + labelDokter + '</small>';
     }
+
+    function updateLamaDirawat() {
+        const tglMasuk = new Date(tglMasukInput.value);
+        const tglKeluar = new Date(tglKeluarInput.value);
+        
+        if (tglMasukInput.value && tglKeluarInput.value && !isNaN(tglMasuk) && !isNaN(tglKeluar)) {
+            const timeDiff = tglKeluar.getTime() - tglMasuk.getTime();
+            const dayDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+            
+            // Set minimum to 1 day if dates are the same or valid, otherwise empty if invalid
+            lamaDirawatInput.value = dayDiff >= 0 ? (dayDiff === 0 ? 1 : dayDiff) : '';
+        } else {
+            lamaDirawatInput.value = '';
+        }
+    }
+
+    tglMasukInput.addEventListener('change', updateLamaDirawat);
+    tglKeluarInput.addEventListener('change', updateLamaDirawat);
 
     dpjpUtamaSearch.addEventListener('input', function () {
         const keyword = this.value.trim().toLowerCase();

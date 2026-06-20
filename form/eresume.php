@@ -15,6 +15,11 @@ ensureRegistrasiSchema($koneksi);
 // ==========================================
 // 2. AMBIL DATA DARI TABEL
 // ==========================================
+$limit = 10;
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+if ($page < 1) $page = 1;
+$offset = ($page - 1) * $limit;
+
 $registrasiSql = "SELECT r.*, tr.id AS resume_id
                   FROM tabel_registrasi r
                   LEFT JOIN (
@@ -23,10 +28,20 @@ $registrasiSql = "SELECT r.*, tr.id AS resume_id
                       WHERE registrasi_id IS NOT NULL
                       GROUP BY registrasi_id
                   ) tr ON tr.registrasi_id = r.id
-                  ORDER BY r.id DESC";
+                  ORDER BY r.id DESC LIMIT $limit OFFSET $offset";
 $registrasiResult = mysqli_query($koneksi, $registrasiSql);
-$sql = "SELECT * FROM tabel_resume_medis WHERE diagnosa_utama IS NOT NULL AND diagnosa_utama <> '' ORDER BY id DESC";
+$sql = "SELECT * FROM tabel_resume_medis WHERE diagnosa_utama IS NOT NULL AND diagnosa_utama <> '' ORDER BY id DESC LIMIT $limit OFFSET $offset";
 $result = mysqli_query($koneksi, $sql);
+
+// Hitung total untuk pagination
+$totalRegResult = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM tabel_registrasi");
+$totalReg = mysqli_fetch_assoc($totalRegResult)['total'];
+
+$totalResResult = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM tabel_resume_medis WHERE diagnosa_utama IS NOT NULL AND diagnosa_utama <> ''");
+$totalRes = mysqli_fetch_assoc($totalResResult)['total'];
+
+$totalRows = max($totalReg, $totalRes);
+$totalPages = ceil($totalRows / $limit);
 
 if (!$registrasiResult || !$result) {
     die("Query error: " . mysqli_error($koneksi));
@@ -182,7 +197,26 @@ if (!$registrasiResult || !$result) {
                 </tbody>
             </table>
         </div>
-        <small class="text-muted">*Hanya menampilkan kolom utama. Ekspor ke Excel untuk melihat seluruh detail data pemeriksaan fisik, penunjang, dan terapi.</small>
+        </div>
+        <small class="text-muted d-block mb-3">*Hanya menampilkan kolom utama. Ekspor ke Excel untuk melihat seluruh detail data pemeriksaan fisik, penunjang, dan terapi.</small>
+
+        <?php if ($totalPages > 1): ?>
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item <?= ($page <= 1) ? 'disabled' : '' ?>">
+                        <a class="page-link" href="?page=<?= $page - 1 ?>">Previous</a>
+                    </li>
+                    <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                        <li class="page-item <?= ($i == $page) ? 'active' : '' ?>">
+                            <a class="page-link" href="?page=<?= $i ?>"><?= $i ?></a>
+                        </li>
+                    <?php endfor; ?>
+                    <li class="page-item <?= ($page >= $totalPages) ? 'disabled' : '' ?>">
+                        <a class="page-link" href="?page=<?= $page + 1 ?>">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        <?php endif; ?>
     </div>
 </div>
 
