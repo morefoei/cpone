@@ -63,16 +63,13 @@ function dokterLabel($dokter) {
 function dokterQrData($dokter, $namaManual = '') {
     if (!$dokter) {
         $nama = $namaManual ? $namaManual : 'Tanda Tangan Elektronik';
-        return "Ditandatangani secara elektronik oleh:\nNama: $nama\nSistem E-Resume Medis";
+        return "TTE: $nama | Sistem E-Resume Medis";
     }
 
     $nama = $dokter['nama_dokter'] ?? '-';
     $nomor = $dokter['nomor_dokter'] ?? '-';
-    $jenis = $dokter['jenis_dokter'] ?? '';
-    $spesialis = trim($dokter['spesialis'] ?? '');
-    $jenisLengkap = $jenis === 'Spesialis' && $spesialis !== '' ? "$jenis - $spesialis" : $jenis;
-
-    return "Ditandatangani secara elektronik oleh:\nNama: $nama\nSIP/No: $nomor\nBidang: $jenisLengkap\nSistem E-Resume Medis";
+    
+    return "TTE: $nama | SIP: $nomor | Sistem E-Resume Medis";
 }
 
 function code128BSvg($text, $height = 82, $module = 1.25) {
@@ -121,11 +118,11 @@ function code128BSvg($text, $height = 82, $module = 1.25) {
     return '<svg class="barcode" xmlns="http://www.w3.org/2000/svg" width="' . $x . '" height="' . $height . '" viewBox="0 0 ' . $x . ' ' . $height . '" role="img" aria-label="Barcode dokter">' . $bars . '</svg>';
 }
 
-function qrCodeImg($text, $displaySize = 100) {
+function qrCodeImg($text, $displaySize = 120) {
     if (empty(trim($text))) {
         return '';
     }
-    // Fetch a high resolution image to prevent pixelation when scanning
+    // Fetch from API and increase margin to ensure scannability
     $encodedUrl = rawurlencode($text);
-    return '<img class="barcode qrcode" src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' . $encodedUrl . '&margin=1" alt="QR Code" style="width:' . $displaySize . 'px; height:' . $displaySize . 'px; object-fit: contain;">';
+    return '<img class="barcode qrcode" src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=2&data=' . $encodedUrl . '" alt="QR Code" style="width:' . $displaySize . 'px; height:' . $displaySize . 'px; object-fit: contain;">';
 }

@@ -86,7 +86,7 @@ function multiline($value) {
         .signature-image { width: 170px; height: 62px; object-fit: contain; display: block; margin: 8px auto 6px; }
         .signature-placeholder { width: 170px; height: 62px; margin: 8px auto 6px; border-bottom: 1px solid #000; }
         .barcode-wrap { width: 100%; height: auto; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; }
-        .barcode { width: 75px !important; height: 75px !important; }
+        .barcode { width: 100px !important; height: 100px !important; }
         .doctor-meta { font-size: 12px; margin-top: 3px; }
 
         @media print {
@@ -259,7 +259,7 @@ function multiline($value) {
             <?php else: ?>
                 <div class="signature-placeholder"></div>
             <?php endif; ?>
-            <div class="barcode-wrap"><?= qrCodeImg($barcodeDokter, 75) ?></div>
+            <div class="barcode-wrap"><?= qrCodeImg($barcodeDokter, 100) ?></div>
             <div>(<?= h($namaDokterTtd) ?>)</div>
             <?php if ($dokterTtd): ?>
                 <div class="doctor-meta"><?= h($dokterTtd['nomor_dokter']) ?> | <?= h($dokterTtd['jenis_dokter']) ?><?= !empty($dokterTtd['spesialis']) ? ' - ' . h($dokterTtd['spesialis']) : '' ?></div>
