@@ -105,3 +105,11 @@ function code128BSvg($text, $height = 82, $module = 1.25) {
 
     return '<svg class="barcode" xmlns="http://www.w3.org/2000/svg" width="' . $x . '" height="' . $height . '" viewBox="0 0 ' . $x . ' ' . $height . '" role="img" aria-label="Barcode dokter">' . $bars . '</svg>';
 }
+
+function qrCodeImg($text, $size = 100) {
+    if (empty(trim($text))) {
+        return '';
+    }
+    $encodedUrl = urlencode($text);
+    return '<img class="barcode qrcode" src="https://api.qrserver.com/v1/create-qr-code/?size=' . $size . 'x' . $size . '&data=' . $encodedUrl . '" alt="QR Code" style="width:' . $size . 'px; height:' . $size . 'px; object-fit: contain;">';
+}

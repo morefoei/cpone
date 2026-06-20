@@ -43,7 +43,7 @@ foreach ($dokterList as $dokter) {
         'nama_dokter' => $dokter['nama_dokter'] ?? '',
         'label' => dokterLabel($dokter),
         'tanda_tangan' => $dokter['tanda_tangan'] ?? '',
-        'barcode' => code128BSvg(dokterLabel($dokter), 58, 1),
+        'barcode' => qrCodeImg(dokterLabel($dokter), 75),
     ];
 }
 
@@ -215,7 +215,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         .section-title { border-bottom: 2px solid #0d6efd; padding-bottom: 5px; margin-bottom: 20px; margin-top: 30px; font-weight: bold; color: #0d6efd; }
         .doctor-preview { border: 1px solid #dee2e6; border-radius: 8px; padding: 12px; min-height: 128px; background: #f8f9fa; }
         .doctor-preview img { width: 170px; height: 62px; object-fit: contain; display: block; margin-bottom: 10px; background: #fff; border: 1px solid #e9ecef; }
-        .doctor-preview .barcode { max-width: 190px; height: 58px; background: #fff; }
+        .doctor-preview .barcode { width: 75px !important; height: 75px !important; margin: 0 auto 10px; display: block; background: #fff; border: none; }
     </style>
 </head>
 <body>
