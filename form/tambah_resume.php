@@ -332,14 +332,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <div class="col-md-6 mb-3">
                     <input type="hidden" name="dpjp_utama" id="dpjpUtamaName">
                     <label class="form-label">Preview Tanda Tangan & Barcode DPJP Utama</label>
-                    <div id="dpjpUtamaPreview" class="border rounded p-3 bg-light d-flex align-items-center justify-content-center" style="min-height: 120px;">
+                    <div id="dpjpUtamaPreview" class="border rounded p-3 bg-light d-flex align-items-center justify-content-center" style="min-height: 120px; flex-direction: column;">
                         <span class="text-muted text-center" id="dpjpUtamaPreviewText">Pilih DPJP Utama dari master dokter.</span>
-                        <div id="dpjpUtamaPreviewContent" class="d-none text-center">
-                            <div id="dpjpUtamaBarcode" class="mb-2"></div>
-                            <div class="fw-bold" id="dpjpUtamaNamaTtd"></div>
-                            <small class="text-muted" id="dpjpUtamaSipTtd"></small>
-                        </div>
                     </div>
+                    <small class="text-muted mt-2 d-block">Pilihan ini dipakai untuk tanda tangan dan barcode di cetak resume.</small>
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Rawat Bersama?</label>
@@ -348,12 +344,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <option value="Ya" <?= formSelected($editData, 'rawat_bersama', 'Ya') ?>>Ya</option>
                     </select>
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">Preview Tanda Tangan & Barcode DPJP Utama</label>
-                    <div class="doctor-preview" id="dpjpUtamaPreview">
-                        <span class="text-muted">Pilih DPJP Utama dari master dokter.</span>
-                    </div>
-                </div>
+                <div class="col-md-6 mb-3"></div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label">DPJP Lainnya 1 (Opsional)</label>
                     <input type="text" name="dpjp_lain_1" class="form-control" value="<?= formValue($editData, 'dpjp_lain_1') ?>">

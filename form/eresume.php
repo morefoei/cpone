@@ -132,6 +132,9 @@ if (!$registrasiResult || !$resultDraft || !$resultSelesai) {
                 <a href="/form/dokter" class="btn btn-outline-secondary shadow-sm me-2">
                     Master Dokter
                 </a>
+                <a href="/form/tambah_resume" class="btn btn-primary shadow-sm me-2">
+                    Buat E-Resume
+                </a>
                 <a href="/form/export-excel" class="btn btn-success shadow-sm">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-excel me-1" viewBox="0 0 16 16">
                       <path d="M5.884 6.68a.5.5 0 1 0-.768.64L7.349 10l-2.233 2.68a.5.5 0 0 0 .768.64L8 10.781l2.116 2.539a.5.5 0 0 0 .768-.641L8.651 10l2.233-2.68a.5.5 0 0 0-.768-.64L8 9.219l-2.116-2.54z"/>
