@@ -20,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['username'] = $user['username'];
             $_SESSION['nama_lengkap'] = $user['nama_lengkap'];
+            $_SESSION['role'] = $user['role'] ?? 'admin';
             header("Location: /");
             exit;
         } else {

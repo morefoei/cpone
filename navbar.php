@@ -12,6 +12,9 @@
                 <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
                 <li class="nav-item"><a class="nav-link text-warning fw-bold" href="/form/eresume">E-Resume</a></li>
                 <li class="nav-item"><a class="nav-link text-warning fw-bold" href="/dashboard">Dashboard Laporan</a></li>
+                <?php if (($_SESSION['role'] ?? 'admin') === 'admin'): ?>
+                <li class="nav-item"><a class="nav-link text-info fw-bold" href="/users">Kelola User</a></li>
+                <?php endif; ?>
                 
                 <li class="nav-item dropdown ms-lg-3 mt-3 mt-lg-0">
                     <a class="nav-link dropdown-toggle text-white d-flex align-items-center bg-primary rounded-pill px-3 py-2 shadow-sm" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">

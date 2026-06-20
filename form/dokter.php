@@ -10,8 +10,9 @@ ensureDokterSchema($koneksi);
 
 $message = $_GET['msg'] ?? '';
 $error = '';
+$isAdmin = ($_SESSION['role'] ?? 'admin') === 'admin';
 
-if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
+if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id']) && $isAdmin) {
     $delId = (int)$_GET['id'];
     if (mysqli_query($koneksi, "DELETE FROM tabel_dokter WHERE id = $delId")) {
         header("Location: dokter.php?msg=" . urlencode('Data dokter berhasil dihapus.'));
@@ -23,7 +24,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
 
 $editId = 0;
 $editData = null;
-if (isset($_GET['action']) && $_GET['action'] === 'edit' && isset($_GET['id'])) {
+if (isset($_GET['action']) && $_GET['action'] === 'edit' && isset($_GET['id']) && $isAdmin) {
     $editId = (int)$_GET['id'];
     $res = mysqli_query($koneksi, "SELECT * FROM tabel_dokter WHERE id = $editId");
     if ($res && mysqli_num_rows($res) > 0) {
@@ -31,7 +32,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'edit' && isset($_GET['id'])) 
     }
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin) {
     $post_id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
     $nama_dokter = mysqli_real_escape_string($koneksi, trim($_POST['nama_dokter'] ?? ''));
     $nomor_dokter = mysqli_real_escape_string($koneksi, trim($_POST['nomor_dokter'] ?? ''));
@@ -129,6 +130,7 @@ $dokterList = getDokterList($koneksi);
         <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
     <?php endif; ?>
 
+    <?php if ($isAdmin): ?>
     <div class="panel mb-4">
         <h5 class="mb-3"><?= $editData ? 'Edit Dokter' : 'Tambah Dokter' ?></h5>
         <?php if ($editData): ?>
@@ -170,6 +172,9 @@ $dokterList = getDokterList($koneksi);
             </div>
         </form>
     </div>
+    <?php else: ?>
+        <div class="alert alert-info">Anda login sebagai Rekam Medis. Anda hanya dapat melihat daftar dokter.</div>
+    <?php endif; ?>
 
     <div class="panel">
         <h5 class="mb-3">List Dokter</h5>
@@ -181,7 +186,7 @@ $dokterList = getDokterList($koneksi);
                         <th>Nomor Dokter</th>
                         <th>Jenis</th>
                         <th>Tanda Tangan</th>
-                        <th>Aksi</th>
+                        <?php if ($isAdmin): ?><th>Aksi</th><?php endif; ?>
                     </tr>
                 </thead>
                 <tbody>
@@ -203,10 +208,12 @@ $dokterList = getDokterList($koneksi);
                                         <span class="text-muted">Belum ada</span>
                                     <?php endif; ?>
                                 </td>
+                                <?php if ($isAdmin): ?>
                                 <td>
                                     <a href="/form/dokter?action=edit&id=<?= $dokter['id'] ?>" class="btn btn-sm btn-outline-primary">Edit</a>
                                     <a href="/form/dokter?action=delete&id=<?= $dokter['id'] ?>" class="btn btn-sm btn-outline-danger ms-1" onclick="return confirm('Apakah Anda yakin ingin menghapus dokter ini?');">Hapus</a>
                                 </td>
+                                <?php endif; ?>
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
