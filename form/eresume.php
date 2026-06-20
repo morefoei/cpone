@@ -57,6 +57,9 @@ if (!$registrasiResult || !$result) {
             </div>
             
             <div>
+                <a href="../index.php" class="btn btn-outline-dark shadow-sm me-2">
+                    Kembali ke Index
+                </a>
                 <a href="registrasi.php" class="btn btn-outline-primary shadow-sm me-2">
                     Registrasi
                 </a>
@@ -162,7 +165,8 @@ if (!$registrasiResult || !$result) {
                                 <td><?= htmlspecialchars($row['dpjp_utama'] ?? '-') ?></td>
                                 <td><?= htmlspecialchars($row['kondisi_pulang'] ?? '-') ?></td>
                                 <td>
-                                    <a href="detail_resume.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-outline-primary">Lihat Detail</a>
+                                    <a href="detail_resume.php?id=<?= (int) $row['id'] ?>" class="btn btn-sm btn-outline-primary">Lihat Detail</a>
+                                    <a href="tambah_resume.php?id=<?= (int) $row['id'] ?>" class="btn btn-sm btn-outline-warning ms-1">Edit</a>
                                 </td>
                             </tr>
                             <?php

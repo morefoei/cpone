@@ -10,9 +10,33 @@ include __DIR__ . '/registrasi_helpers.php';
 
 $dokterList = getDokterList($koneksi);
 $registrasiList = getRegistrasiList($koneksi);
-$selectedRegistrasiId = (int) ($_GET['registrasi_id'] ?? 0);
+$editId = (int) ($_GET['id'] ?? 0);
+$editData = null;
+
+if ($editId > 0) {
+    $editResult = mysqli_query($koneksi, "SELECT * FROM tabel_resume_medis WHERE id = $editId LIMIT 1");
+    $editData = $editResult ? mysqli_fetch_assoc($editResult) : null;
+    if (!$editData) {
+        die("Data e-resume tidak ditemukan.");
+    }
+}
+
+$selectedRegistrasiId = (int) ($_GET['registrasi_id'] ?? ($editData['registrasi_id'] ?? 0));
 $dokterPreviewList = [];
 $registrasiPreviewList = [];
+
+function formValue($data, $key, $default = '') {
+    if (!is_array($data)) {
+        return htmlspecialchars($default, ENT_QUOTES, 'UTF-8');
+    }
+
+    return htmlspecialchars($data[$key] ?? $default, ENT_QUOTES, 'UTF-8');
+}
+
+function formSelected($data, $key, $value, $default = '') {
+    $current = is_array($data) ? ($data[$key] ?? $default) : $default;
+    return (string) $current === (string) $value ? 'selected' : '';
+}
 
 foreach ($dokterList as $dokter) {
     $dokterPreviewList[(int) $dokter['id']] = [
@@ -36,6 +60,7 @@ foreach ($registrasiList as $registrasi) {
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Escape semua input untuk keamanan
+    $edit_id = (int) ($_POST['id'] ?? 0);
     $registrasi_id = (int) ($_POST['registrasi_id'] ?? 0);
     $nomor_rm = mysqli_real_escape_string($koneksi, $_POST['nomor_rm']);
     $nama_pasien = mysqli_real_escape_string($koneksi, $_POST['nama_pasien']);
@@ -103,24 +128,69 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     }
 
-    // Query super panjang untuk memasukkan semua data
-    $query = "INSERT INTO tabel_resume_medis (
-        registrasi_id, nomor_rm, nama_pasien, tanggal_lahir, jenis_kelamin, tgl_masuk, tgl_keluar, lama_dirawat, ruang_rawat,
-        dpjp_utama, dpjp_utama_dokter_id, rawat_bersama, dpjp_lain_1, dpjp_lain_2, dpjp_lain_3, diagnosa_masuk, riwayat_penyakit,
-        td, n, s, p, sat_o2, laboratorium, penunjang_lain, diagnosa_utama, icd_utama,
-        diagnosa_sekunder_1, icd_sekunder_1, prosedur_operasi, icd_prosedur_1, icd_prosedur_2,
-        pengobatan, kondisi_pulang, instruksi_pulang, nama_dpjp_pulang, dpjp_pulang_dokter_id
-    ) VALUES (
-        " . ($registrasi_id > 0 ? $registrasi_id : "NULL") . ", '$nomor_rm', '$nama_pasien', '$tanggal_lahir', '$jenis_kelamin', '$tgl_masuk', '$tgl_keluar', '$lama_dirawat', '$ruang_rawat',
-        '$dpjp_utama', " . ($dpjp_utama_dokter_id > 0 ? $dpjp_utama_dokter_id : "NULL") . ", '$rawat_bersama', '$dpjp_lain_1', '$dpjp_lain_2', '$dpjp_lain_3', '$diagnosa_masuk', '$riwayat_penyakit',
-        '$td', '$n', '$s', '$p', '$sat_o2', '$laboratorium', '$penunjang_lain', '$diagnosa_utama', '$icd_utama',
-        '$diagnosa_sekunder_1', '$icd_sekunder_1', '$prosedur_operasi', '$icd_prosedur_1', '$icd_prosedur_2',
-        '$pengobatan', '$kondisi_pulang', '$instruksi_pulang', '$nama_dpjp_pulang', " . ($dpjp_pulang_dokter_id > 0 ? $dpjp_pulang_dokter_id : "NULL") . "
-    )";
+    $registrasiSqlValue = $registrasi_id > 0 ? $registrasi_id : "NULL";
+    $dpjpUtamaSqlValue = $dpjp_utama_dokter_id > 0 ? $dpjp_utama_dokter_id : "NULL";
+    $dpjpPulangSqlValue = $dpjp_pulang_dokter_id > 0 ? $dpjp_pulang_dokter_id : "NULL";
+
+    if ($edit_id > 0) {
+        $query = "UPDATE tabel_resume_medis SET
+            registrasi_id = $registrasiSqlValue,
+            nomor_rm = '$nomor_rm',
+            nama_pasien = '$nama_pasien',
+            tanggal_lahir = '$tanggal_lahir',
+            jenis_kelamin = '$jenis_kelamin',
+            tgl_masuk = '$tgl_masuk',
+            tgl_keluar = '$tgl_keluar',
+            lama_dirawat = '$lama_dirawat',
+            ruang_rawat = '$ruang_rawat',
+            dpjp_utama = '$dpjp_utama',
+            dpjp_utama_dokter_id = $dpjpUtamaSqlValue,
+            rawat_bersama = '$rawat_bersama',
+            dpjp_lain_1 = '$dpjp_lain_1',
+            dpjp_lain_2 = '$dpjp_lain_2',
+            dpjp_lain_3 = '$dpjp_lain_3',
+            diagnosa_masuk = '$diagnosa_masuk',
+            riwayat_penyakit = '$riwayat_penyakit',
+            td = '$td',
+            n = '$n',
+            s = '$s',
+            p = '$p',
+            sat_o2 = '$sat_o2',
+            laboratorium = '$laboratorium',
+            penunjang_lain = '$penunjang_lain',
+            diagnosa_utama = '$diagnosa_utama',
+            icd_utama = '$icd_utama',
+            diagnosa_sekunder_1 = '$diagnosa_sekunder_1',
+            icd_sekunder_1 = '$icd_sekunder_1',
+            prosedur_operasi = '$prosedur_operasi',
+            icd_prosedur_1 = '$icd_prosedur_1',
+            icd_prosedur_2 = '$icd_prosedur_2',
+            pengobatan = '$pengobatan',
+            kondisi_pulang = '$kondisi_pulang',
+            instruksi_pulang = '$instruksi_pulang',
+            nama_dpjp_pulang = '$nama_dpjp_pulang',
+            dpjp_pulang_dokter_id = $dpjpPulangSqlValue
+            WHERE id = $edit_id";
+    } else {
+        $query = "INSERT INTO tabel_resume_medis (
+            registrasi_id, nomor_rm, nama_pasien, tanggal_lahir, jenis_kelamin, tgl_masuk, tgl_keluar, lama_dirawat, ruang_rawat,
+            dpjp_utama, dpjp_utama_dokter_id, rawat_bersama, dpjp_lain_1, dpjp_lain_2, dpjp_lain_3, diagnosa_masuk, riwayat_penyakit,
+            td, n, s, p, sat_o2, laboratorium, penunjang_lain, diagnosa_utama, icd_utama,
+            diagnosa_sekunder_1, icd_sekunder_1, prosedur_operasi, icd_prosedur_1, icd_prosedur_2,
+            pengobatan, kondisi_pulang, instruksi_pulang, nama_dpjp_pulang, dpjp_pulang_dokter_id
+        ) VALUES (
+            $registrasiSqlValue, '$nomor_rm', '$nama_pasien', '$tanggal_lahir', '$jenis_kelamin', '$tgl_masuk', '$tgl_keluar', '$lama_dirawat', '$ruang_rawat',
+            '$dpjp_utama', $dpjpUtamaSqlValue, '$rawat_bersama', '$dpjp_lain_1', '$dpjp_lain_2', '$dpjp_lain_3', '$diagnosa_masuk', '$riwayat_penyakit',
+            '$td', '$n', '$s', '$p', '$sat_o2', '$laboratorium', '$penunjang_lain', '$diagnosa_utama', '$icd_utama',
+            '$diagnosa_sekunder_1', '$icd_sekunder_1', '$prosedur_operasi', '$icd_prosedur_1', '$icd_prosedur_2',
+            '$pengobatan', '$kondisi_pulang', '$instruksi_pulang', '$nama_dpjp_pulang', $dpjpPulangSqlValue
+        )";
+    }
 
     if (mysqli_query($koneksi, $query)) {
+        $successMessage = $edit_id > 0 ? 'Data Resume Medis berhasil diperbarui!' : 'Seluruh data Resume Medis berhasil disimpan!';
         echo "<script>
-                alert('Seluruh data Resume Medis berhasil disimpan!');
+                alert('$successMessage');
                 window.location.href = 'eresume.php';
               </script>";
         exit;
@@ -150,13 +220,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <div class="container mt-5 mb-5">
     <div class="form-container">
-        <h2 class="text-center mb-4">Formulir E-Resume Medis</h2>
+        <h2 class="text-center mb-4"><?= $editData ? 'Edit E-Resume Medis' : 'Formulir E-Resume Medis' ?></h2>
         <form action="" method="POST">
+            <input type="hidden" name="id" value="<?= (int) ($editData['id'] ?? 0) ?>">
             
             <h5 class="section-title">1. Identitas Pasien & Perawatan</h5>
             <div class="mb-3">
                 <label class="form-label">Pilih Pasien dari Registrasi</label>
-                <select name="registrasi_id" id="registrasiSelect" class="form-select" required>
+                <select name="registrasi_id" id="registrasiSelect" class="form-select" <?= $editData ? '' : 'required' ?>>
                     <option value="">-- Pilih Data Registrasi --</option>
                     <?php foreach ($registrasiList as $registrasi): ?>
                         <?php
@@ -172,40 +243,40 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <div class="row">
                 <div class="col-md-3 mb-3">
                     <label class="form-label">Nomor RM</label>
-                    <input type="text" name="nomor_rm" id="nomorRmInput" class="form-control" required readonly>
+                    <input type="text" name="nomor_rm" id="nomorRmInput" class="form-control" value="<?= formValue($editData, 'nomor_rm') ?>" required readonly>
                 </div>
                 <div class="col-md-5 mb-3">
                     <label class="form-label">Nama Pasien</label>
-                    <input type="text" name="nama_pasien" id="namaPasienInput" class="form-control" required readonly>
+                    <input type="text" name="nama_pasien" id="namaPasienInput" class="form-control" value="<?= formValue($editData, 'nama_pasien') ?>" required readonly>
                 </div>
                 <div class="col-md-2 mb-3">
                     <label class="form-label">Tgl Lahir</label>
-                    <input type="date" name="tanggal_lahir" id="tanggalLahirInput" class="form-control" readonly>
+                    <input type="date" name="tanggal_lahir" id="tanggalLahirInput" class="form-control" value="<?= formValue($editData, 'tanggal_lahir') ?>" readonly>
                 </div>
                 <div class="col-md-2 mb-3">
                     <label class="form-label">J. Kelamin</label>
                     <select name="jenis_kelamin" id="jenisKelaminSelect" class="form-select">
-                        <option value="L">L</option>
-                        <option value="P">P</option>
+                        <option value="L" <?= formSelected($editData, 'jenis_kelamin', 'L', 'L') ?>>L</option>
+                        <option value="P" <?= formSelected($editData, 'jenis_kelamin', 'P') ?>>P</option>
                     </select>
                 </div>
             </div>
             <div class="row">
                 <div class="col-md-3 mb-3">
                     <label class="form-label">Tanggal Masuk</label>
-                    <input type="date" name="tgl_masuk" id="tglMasukInput" class="form-control" required readonly>
+                    <input type="date" name="tgl_masuk" id="tglMasukInput" class="form-control" value="<?= formValue($editData, 'tgl_masuk') ?>" required readonly>
                 </div>
                 <div class="col-md-3 mb-3">
                     <label class="form-label">Tanggal Keluar</label>
-                    <input type="date" name="tgl_keluar" class="form-control">
+                    <input type="date" name="tgl_keluar" class="form-control" value="<?= formValue($editData, 'tgl_keluar') ?>">
                 </div>
                 <div class="col-md-3 mb-3">
                     <label class="form-label">Lama Dirawat (Hari)</label>
-                    <input type="number" name="lama_dirawat" class="form-control">
+                    <input type="number" name="lama_dirawat" class="form-control" value="<?= formValue($editData, 'lama_dirawat') ?>">
                 </div>
                 <div class="col-md-3 mb-3">
                     <label class="form-label">Ruang Rawat</label>
-                    <input type="text" name="ruang_rawat" class="form-control">
+                    <input type="text" name="ruang_rawat" class="form-control" value="<?= formValue($editData, 'ruang_rawat') ?>">
                 </div>
             </div>
 
@@ -217,7 +288,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <select name="dpjp_utama_dokter_id" id="dpjpUtamaSelect" class="form-select" required>
                         <option value="">-- Pilih Dokter --</option>
                         <?php foreach ($dokterList as $dokter): ?>
-                            <option value="<?= (int) $dokter['id'] ?>" data-search="<?= htmlspecialchars(strtolower(dokterLabel($dokter)), ENT_QUOTES, 'UTF-8') ?>">
+                            <option value="<?= (int) $dokter['id'] ?>" data-search="<?= htmlspecialchars(strtolower(dokterLabel($dokter)), ENT_QUOTES, 'UTF-8') ?>" <?= (int) ($editData['dpjp_utama_dokter_id'] ?? 0) === (int) $dokter['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars(dokterLabel($dokter)) ?>
                             </option>
                         <?php endforeach; ?>
@@ -228,8 +299,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Rawat Bersama?</label>
                     <select name="rawat_bersama" class="form-select">
-                        <option value="Tidak">Tidak</option>
-                        <option value="Ya">Ya</option>
+                        <option value="Tidak" <?= formSelected($editData, 'rawat_bersama', 'Tidak', 'Tidak') ?>>Tidak</option>
+                        <option value="Ya" <?= formSelected($editData, 'rawat_bersama', 'Ya') ?>>Ya</option>
                     </select>
                 </div>
                 <div class="col-md-6 mb-3">
@@ -241,65 +312,65 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <div class="col-md-6 mb-3"></div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label">DPJP Lainnya 1 (Opsional)</label>
-                    <input type="text" name="dpjp_lain_1" class="form-control">
+                    <input type="text" name="dpjp_lain_1" class="form-control" value="<?= formValue($editData, 'dpjp_lain_1') ?>">
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label">DPJP Lainnya 2 (Opsional)</label>
-                    <input type="text" name="dpjp_lain_2" class="form-control">
+                    <input type="text" name="dpjp_lain_2" class="form-control" value="<?= formValue($editData, 'dpjp_lain_2') ?>">
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label">DPJP Lainnya 3 (Opsional)</label>
-                    <input type="text" name="dpjp_lain_3" class="form-control">
+                    <input type="text" name="dpjp_lain_3" class="form-control" value="<?= formValue($editData, 'dpjp_lain_3') ?>">
                 </div>
             </div>
 
             <h5 class="section-title">3. Klinis & Pemeriksaan Fisik</h5>
             <div class="mb-3">
                 <label class="form-label">Diagnosa Masuk</label>
-                <input type="text" name="diagnosa_masuk" id="diagnosaMasukInput" class="form-control" required readonly>
+                <input type="text" name="diagnosa_masuk" id="diagnosaMasukInput" class="form-control" value="<?= formValue($editData, 'diagnosa_masuk') ?>" required readonly>
             </div>
             <div class="mb-3">
                 <label class="form-label">Ringkasan Riwayat Penyakit</label>
-                <textarea name="riwayat_penyakit" class="form-control" rows="3"></textarea>
+                <textarea name="riwayat_penyakit" class="form-control" rows="3"><?= formValue($editData, 'riwayat_penyakit') ?></textarea>
             </div>
             <label class="form-label fw-bold">Pemeriksaan Fisik:</label>
             <div class="row mb-3">
-                <div class="col"><input type="text" name="td" class="form-control" placeholder="TD"></div>
-                <div class="col"><input type="text" name="n" class="form-control" placeholder="Nadi"></div>
-                <div class="col"><input type="text" name="s" class="form-control" placeholder="Suhu"></div>
-                <div class="col"><input type="text" name="p" class="form-control" placeholder="Pernapasan"></div>
-                <div class="col"><input type="text" name="sat_o2" class="form-control" placeholder="Sat O2"></div>
+                <div class="col"><input type="text" name="td" class="form-control" placeholder="TD" value="<?= formValue($editData, 'td') ?>"></div>
+                <div class="col"><input type="text" name="n" class="form-control" placeholder="Nadi" value="<?= formValue($editData, 'n') ?>"></div>
+                <div class="col"><input type="text" name="s" class="form-control" placeholder="Suhu" value="<?= formValue($editData, 's') ?>"></div>
+                <div class="col"><input type="text" name="p" class="form-control" placeholder="Pernapasan" value="<?= formValue($editData, 'p') ?>"></div>
+                <div class="col"><input type="text" name="sat_o2" class="form-control" placeholder="Sat O2" value="<?= formValue($editData, 'sat_o2') ?>"></div>
             </div>
 
             <h5 class="section-title">4. Penunjang & Diagnosa Akhir</h5>
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Laboratorium</label>
-                    <textarea name="laboratorium" class="form-control" rows="2"></textarea>
+                    <textarea name="laboratorium" class="form-control" rows="2"><?= formValue($editData, 'laboratorium') ?></textarea>
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Penunjang Lain</label>
-                    <textarea name="penunjang_lain" class="form-control" rows="2"></textarea>
+                    <textarea name="penunjang_lain" class="form-control" rows="2"><?= formValue($editData, 'penunjang_lain') ?></textarea>
                 </div>
             </div>
             <div class="row">
                 <div class="col-md-9 mb-3">
                     <label class="form-label text-danger fw-bold">Diagnosa Utama</label>
-                    <input type="text" name="diagnosa_utama" class="form-control border-danger" required>
+                    <input type="text" name="diagnosa_utama" class="form-control border-danger" value="<?= formValue($editData, 'diagnosa_utama') ?>" required>
                 </div>
                 <div class="col-md-3 mb-3">
                     <label class="form-label text-danger fw-bold">Kode ICD</label>
-                    <input type="text" name="icd_utama" class="form-control border-danger">
+                    <input type="text" name="icd_utama" class="form-control border-danger" value="<?= formValue($editData, 'icd_utama') ?>">
                 </div>
             </div>
             <div class="row">
                 <div class="col-md-9 mb-3">
                     <label class="form-label">Diagnosa Sekunder (1)</label>
-                    <input type="text" name="diagnosa_sekunder_1" class="form-control">
+                    <input type="text" name="diagnosa_sekunder_1" class="form-control" value="<?= formValue($editData, 'diagnosa_sekunder_1') ?>">
                 </div>
                 <div class="col-md-3 mb-3">
                     <label class="form-label">Kode ICD</label>
-                    <input type="text" name="icd_sekunder_1" class="form-control">
+                    <input type="text" name="icd_sekunder_1" class="form-control" value="<?= formValue($editData, 'icd_sekunder_1') ?>">
                 </div>
             </div>
 
@@ -307,20 +378,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <div class="row">
                 <div class="col-md-8 mb-3">
                     <label class="form-label">Prosedur / Operasi</label>
-                    <input type="text" name="prosedur_operasi" class="form-control">
+                    <input type="text" name="prosedur_operasi" class="form-control" value="<?= formValue($editData, 'prosedur_operasi') ?>">
                 </div>
                 <div class="col-md-2 mb-3">
                     <label class="form-label">ICD Proc 1</label>
-                    <input type="text" name="icd_prosedur_1" class="form-control">
+                    <input type="text" name="icd_prosedur_1" class="form-control" value="<?= formValue($editData, 'icd_prosedur_1') ?>">
                 </div>
                 <div class="col-md-2 mb-3">
                     <label class="form-label">ICD Proc 2</label>
-                    <input type="text" name="icd_prosedur_2" class="form-control">
+                    <input type="text" name="icd_prosedur_2" class="form-control" value="<?= formValue($editData, 'icd_prosedur_2') ?>">
                 </div>
             </div>
             <div class="mb-3">
                 <label class="form-label">Pengobatan Selama Dirawat</label>
-                <textarea name="pengobatan" class="form-control" rows="3"></textarea>
+                <textarea name="pengobatan" class="form-control" rows="3"><?= formValue($editData, 'pengobatan') ?></textarea>
             </div>
 
             <h5 class="section-title">6. Rencana Pulang</h5>
@@ -329,16 +400,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <label class="form-label">Kondisi Pulang</label>
                     <select name="kondisi_pulang" class="form-select" required>
                         <option value="">-- Pilih Kondisi --</option>
-                        <option value="Diijinkan Pulang">Diijinkan Pulang</option>
-                        <option value="Dirujuk">Dirujuk</option>
-                        <option value="Atas Permintaan Sendiri">Atas Permintaan Sendiri</option>
-                        <option value="Meninggal">Meninggal</option>
-                        <option value="Melarikan Diri">Melarikan Diri</option>
+                        <option value="Diijinkan Pulang" <?= formSelected($editData, 'kondisi_pulang', 'Diijinkan Pulang') ?>>Diijinkan Pulang</option>
+                        <option value="Dirujuk" <?= formSelected($editData, 'kondisi_pulang', 'Dirujuk') ?>>Dirujuk</option>
+                        <option value="Atas Permintaan Sendiri" <?= formSelected($editData, 'kondisi_pulang', 'Atas Permintaan Sendiri') ?>>Atas Permintaan Sendiri</option>
+                        <option value="Meninggal" <?= formSelected($editData, 'kondisi_pulang', 'Meninggal') ?>>Meninggal</option>
+                        <option value="Melarikan Diri" <?= formSelected($editData, 'kondisi_pulang', 'Melarikan Diri') ?>>Melarikan Diri</option>
                     </select>
                 </div>
                 <div class="col-md-8 mb-3">
                     <label class="form-label">Instruksi Pulang</label>
-                    <input type="text" name="instruksi_pulang" class="form-control">
+                    <input type="text" name="instruksi_pulang" class="form-control" value="<?= formValue($editData, 'instruksi_pulang') ?>">
                 </div>
             </div>
             <div class="row mb-4">
@@ -347,7 +418,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <select name="dpjp_pulang_dokter_id" class="form-select">
                         <option value="">-- Pilih Dokter --</option>
                         <?php foreach ($dokterList as $dokter): ?>
-                            <option value="<?= (int) $dokter['id'] ?>">
+                            <option value="<?= (int) $dokter['id'] ?>" <?= (int) ($editData['dpjp_pulang_dokter_id'] ?? 0) === (int) $dokter['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars(dokterLabel($dokter)) ?>
                             </option>
                         <?php endforeach; ?>
@@ -356,7 +427,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Nama DPJP Pemulang Manual</label>
-                    <input type="text" name="nama_dpjp_pulang" class="form-control">
+                    <input type="text" name="nama_dpjp_pulang" class="form-control" value="<?= formValue($editData, 'nama_dpjp_pulang') ?>">
                     <small class="text-muted">Dipakai jika dokter belum ada di master.</small>
                 </div>
             </div>
@@ -364,7 +435,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <hr>
             <div class="d-flex justify-content-between mt-4">
                 <a href="eresume.php" class="btn btn-secondary px-4">Kembali</a>
-                <button type="submit" class="btn btn-primary px-5 fw-bold">Simpan Data Resume Medis</button>
+                <button type="submit" class="btn btn-primary px-5 fw-bold"><?= $editData ? 'Update Data Resume Medis' : 'Simpan Data Resume Medis' ?></button>
             </div>
         </form>
     </div>
@@ -373,6 +444,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const registrasiData = <?= json_encode($registrasiPreviewList, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+    const resumePasienData = <?= json_encode([
+        'nomor_rm' => $editData['nomor_rm'] ?? '',
+        'nama_pasien' => $editData['nama_pasien'] ?? '',
+        'tanggal_lahir' => $editData['tanggal_lahir'] ?? '',
+        'jenis_kelamin' => $editData['jenis_kelamin'] ?? '',
+        'tgl_masuk' => $editData['tgl_masuk'] ?? '',
+        'penyakit' => $editData['diagnosa_masuk'] ?? '',
+    ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
     const dokterData = <?= json_encode($dokterPreviewList, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
     const registrasiSelect = document.getElementById('registrasiSelect');
     const nomorRmInput = document.getElementById('nomorRmInput');
@@ -400,7 +479,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     function updateRegistrasiFields() {
         const selectedId = registrasiSelect.value;
-        const registrasi = registrasiData[selectedId];
+        const registrasi = registrasiData[selectedId] || resumePasienData;
 
         nomorRmInput.value = registrasi ? registrasi.nomor_rm : '';
         namaPasienInput.value = registrasi ? registrasi.nama_pasien : '';
