@@ -5,6 +5,9 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 include dirname(__DIR__) . '/backend/koneksi.php';
+include __DIR__ . '/dokter_helpers.php';
+
+$dokterList = getDokterList($koneksi);
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Escape semua input untuk keamanan
@@ -41,6 +44,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $kondisi_pulang = mysqli_real_escape_string($koneksi, $_POST['kondisi_pulang']);
     $instruksi_pulang = mysqli_real_escape_string($koneksi, $_POST['instruksi_pulang']);
     $nama_dpjp_pulang = mysqli_real_escape_string($koneksi, $_POST['nama_dpjp_pulang']);
+    $dpjp_pulang_dokter_id = (int) ($_POST['dpjp_pulang_dokter_id'] ?? 0);
+
+    if ($dpjp_pulang_dokter_id > 0) {
+        $dokterPulang = getDokterById($koneksi, $dpjp_pulang_dokter_id);
+        if ($dokterPulang) {
+            $nama_dpjp_pulang = mysqli_real_escape_string($koneksi, $dokterPulang['nama_dokter']);
+        }
+    }
 
     // Query super panjang untuk memasukkan semua data
     $query = "INSERT INTO tabel_resume_medis (
@@ -48,13 +59,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         dpjp_utama, rawat_bersama, dpjp_lain_1, dpjp_lain_2, dpjp_lain_3, diagnosa_masuk, riwayat_penyakit,
         td, n, s, p, sat_o2, laboratorium, penunjang_lain, diagnosa_utama, icd_utama,
         diagnosa_sekunder_1, icd_sekunder_1, prosedur_operasi, icd_prosedur_1, icd_prosedur_2,
-        pengobatan, kondisi_pulang, instruksi_pulang, nama_dpjp_pulang
+        pengobatan, kondisi_pulang, instruksi_pulang, nama_dpjp_pulang, dpjp_pulang_dokter_id
     ) VALUES (
         '$nomor_rm', '$nama_pasien', '$tanggal_lahir', '$jenis_kelamin', '$tgl_masuk', '$tgl_keluar', '$lama_dirawat', '$ruang_rawat',
         '$dpjp_utama', '$rawat_bersama', '$dpjp_lain_1', '$dpjp_lain_2', '$dpjp_lain_3', '$diagnosa_masuk', '$riwayat_penyakit',
         '$td', '$n', '$s', '$p', '$sat_o2', '$laboratorium', '$penunjang_lain', '$diagnosa_utama', '$icd_utama',
         '$diagnosa_sekunder_1', '$icd_sekunder_1', '$prosedur_operasi', '$icd_prosedur_1', '$icd_prosedur_2',
-        '$pengobatan', '$kondisi_pulang', '$instruksi_pulang', '$nama_dpjp_pulang'
+        '$pengobatan', '$kondisi_pulang', '$instruksi_pulang', '$nama_dpjp_pulang', " . ($dpjp_pulang_dokter_id > 0 ? $dpjp_pulang_dokter_id : "NULL") . "
     )";
 
     if (mysqli_query($koneksi, $query)) {
@@ -245,9 +256,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <input type="text" name="instruksi_pulang" class="form-control">
                 </div>
             </div>
-            <div class="mb-4">
-                <label class="form-label">Nama DPJP Pemulang</label>
-                <input type="text" name="nama_dpjp_pulang" class="form-control">
+            <div class="row mb-4">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">DPJP Pemulang dari Master Dokter</label>
+                    <select name="dpjp_pulang_dokter_id" class="form-select">
+                        <option value="">-- Pilih Dokter --</option>
+                        <?php foreach ($dokterList as $dokter): ?>
+                            <option value="<?= (int) $dokter['id'] ?>">
+                                <?= htmlspecialchars(dokterLabel($dokter)) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <small class="text-muted">Dipakai untuk tanda tangan dan barcode di cetak resume.</small>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Nama DPJP Pemulang Manual</label>
+                    <input type="text" name="nama_dpjp_pulang" class="form-control">
+                    <small class="text-muted">Dipakai jika dokter belum ada di master.</small>
+                </div>
             </div>
 
             <hr>

@@ -43,6 +43,9 @@ if (!$result) {
             </div>
             
             <div>
+                <a href="dokter.php" class="btn btn-outline-secondary shadow-sm me-2">
+                    Master Dokter
+                </a>
                 <a href="tambah_resume.php" class="btn btn-primary shadow-sm me-2">
                     + Tambah Data
                 </a>

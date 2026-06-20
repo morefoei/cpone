@@ -1,5 +1,6 @@
 <?php
 include dirname(__DIR__) . '/backend/koneksi.php';
+include __DIR__ . '/dokter_helpers.php';
 
 if (!isset($_GET['id'])) {
     die("ID tidak ditemukan");
@@ -10,9 +11,27 @@ $query = "SELECT * FROM tabel_resume_medis WHERE id = '$id'";
 $result = mysqli_query($koneksi, $query);
 $data = mysqli_fetch_assoc($result);
 
+if (!$data) {
+    die("Data tidak ditemukan");
+}
+
+$dokterPulang = getDokterById($koneksi, $data['dpjp_pulang_dokter_id'] ?? 0);
+$namaDpjpPulang = $dokterPulang['nama_dokter'] ?? ($data['nama_dpjp_pulang'] ?: 'Nama DPJP');
+$barcodeDokter = $dokterPulang
+    ? dokterLabel($dokterPulang)
+    : ($data['nama_dpjp_pulang'] ?: 'Nama DPJP');
+
 // Fungsi kecil untuk mengecek checkbox
 function isChecked($db_value, $target_value) {
     return (strcasecmp(trim($db_value ?? ''), $target_value) == 0) ? 'checked' : '';
+}
+
+function h($value) {
+    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
+}
+
+function multiline($value) {
+    return nl2br(h($value));
 }
 ?>
 
@@ -23,162 +42,230 @@ function isChecked($db_value, $target_value) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cetak Resume Medis - <?= htmlspecialchars($data['nama_pasien']) ?></title>
     <style>
-        /* Pengaturan kertas A4 dan font */
-        body { font-family: Arial, sans-serif; font-size: 13px; line-height: 1.4; color: #000; background: #525659; margin: 0; padding: 20px; }
-        * { box-sizing: border-box; }
-        
-        /* Area kertas (Template) */
-        .page { background: white; width: 21cm; min-height: 29.7cm; margin: 0 auto; padding: 1.5cm; box-shadow: 0 0 10px rgba(0,0,0,0.5); position: relative; }
-        
-        /* Desain Tabel dan Kotak seperti PDF asli */
-        .header-table { width: 100%; margin-bottom: 10px; border-bottom: 2px solid #000; padding-bottom: 10px; }
-        .header-table td { vertical-align: top; }
-        .title-doc { font-size: 18px; font-weight: bold; text-align: center; text-decoration: underline; margin-bottom: 5px; }
-        .kode-doc { font-size: 11px; text-align: right; font-weight: bold; }
-        
-        .box-section { border: 1px solid #000; margin-bottom: 10px; padding: 8px; }
-        .box-title { font-weight: bold; margin-bottom: 5px; }
-        
-        .row-grid { display: flex; flex-wrap: wrap; }
-        .col-half { width: 50%; padding-right: 10px; }
-        .col-full { width: 100%; }
-        
-        table.identitas { width: 100%; font-size: 13px; }
-        table.identitas td { padding: 3px 0; vertical-align: top; }
-        .label { width: 130px; font-weight: bold; }
-        .titik-dua { width: 15px; }
-        
-        .icd-box { float: right; border: 1px solid #000; padding: 2px 10px; font-weight: normal; font-size: 12px; }
-        
-        .checkbox-custom { display: inline-block; width: 12px; height: 12px; border: 1px solid #000; margin-right: 5px; position: relative; top: 2px; }
-        .checkbox-custom.checked::after { content: '✔'; position: absolute; top: -3px; left: 1px; font-size: 12px; }
+        @page { size: letter; margin: 0; }
 
-        /* Pengaturan Khusus saat tekan Ctrl+P (Print) */
+        body { font-family: "Times New Roman", Times, serif; font-size: 19px; line-height: 1.18; color: #000; background: #525659; margin: 0; padding: 20px; }
+        * { box-sizing: border-box; }
+
+        .page { background: white; width: 8.5in; min-height: 11in; margin: 0 auto 20px; padding: 0.58in 0.52in 0.45in; box-shadow: 0 0 10px rgba(0,0,0,0.5); position: relative; page-break-after: always; }
+        .page:last-of-type { page-break-after: auto; }
+        .doc-code { text-align: right; font-family: Arial, sans-serif; font-size: 15px; margin: 0 0 0.45in; padding-right: 0.45in; }
+
+        .form-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .form-table td { border: 1px solid #000; padding: 3px 7px; vertical-align: top; }
+        .col-label { width: 36%; }
+        .col-main { width: 30%; }
+        .col-side { width: 34%; }
+        .logo-cell { height: 125px; vertical-align: middle !important; text-align: left; }
+        .header-logo { width: 210px; max-width: 92%; height: auto; display: block; margin: 0 auto; }
+        .patient-row td { height: 37px; }
+        .birth-row td { height: 61px; }
+        .title-cell { font-size: 26px; font-weight: bold; text-align: center; vertical-align: middle !important; }
+        .label { font-weight: bold; }
+        .care-cell { height: 195px; }
+        .care-grid { display: grid; grid-template-columns: 160px 1fr 190px 120px; column-gap: 18px; row-gap: 5px; }
+        .care-grid .colon { display: inline-block; width: 16px; text-align: center; }
+        .dpjp-list { margin-left: 166px; line-height: 1.45; }
+        .tall-riwayat { height: 104px; }
+        .row-fisik { height: 60px; }
+        .tall-lab { height: 134px; }
+        .tall-penunjang { height: 105px; }
+        .diag-row { height: 40px; }
+        .diag-secondary { height: 112px; }
+        .procedure-row { height: 62px; }
+        .medicine-row { height: 150px; }
+        .condition-row { height: 62px; }
+        .instruction-row { height: 40px; }
+        .vitals { display: flex; gap: 34px; white-space: nowrap; }
+        .checkbox-custom { display: inline-block; width: 15px; height: 15px; border: 1px solid #000; margin: 0 3px 0 0; position: relative; top: 2px; }
+        .checkbox-custom.checked::after { content: '✓'; position: absolute; top: -7px; left: 1px; font-size: 21px; line-height: 1; }
+        .checkbox-line { white-space: nowrap; }
+        .signature-area { display: grid; grid-template-columns: 1fr 240px; margin-top: 78px; align-items: start; }
+        .date-line { padding-top: 34px; letter-spacing: 1px; }
+        .signature-box { text-align: center; font-family: Arial, sans-serif; font-size: 19px; }
+        .signature-image { width: 170px; height: 62px; object-fit: contain; display: block; margin: 8px auto 6px; }
+        .signature-placeholder { width: 170px; height: 62px; margin: 8px auto 6px; border-bottom: 1px solid #000; }
+        .barcode-wrap { width: 190px; height: 58px; margin: 0 auto 20px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .barcode { max-width: 190px; height: 58px; }
+        .doctor-meta { font-size: 12px; margin-top: 3px; }
+
         @media print {
             body { background: white; padding: 0; }
-            .page { width: 100%; min-height: auto; margin: 0; padding: 0; box-shadow: none; }
-            /* Sembunyikan elemen yang tidak perlu dicetak */
+            .page { margin: 0; box-shadow: none; }
             .no-print { display: none !important; }
         }
 
-        /* Tombol Cetak Melayang */
-        .btn-print { position: fixed; top: 20px; right: 20px; background: #0d6efd; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; border: none; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); z-index: 1000;}
+        /* Tombol Aksi Melayang */
+        .btn-action { position: fixed; right: 20px; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; border: none; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); z-index: 1000; display: inline-block; }
+        .btn-print { top: 20px; background: #0d6efd; }
         .btn-print:hover { background: #0b5c30; }
+        .btn-back { top: 70px; background: #6c757d; }
+        .btn-back:hover { background: #5c636a; }
     </style>
 </head>
 <body>
 
-<button class="btn-print no-print" onclick="window.print()">🖨️ Cetak / Simpan PDF</button>
+<button class="btn-action btn-print no-print" onclick="window.print()">🖨️ Cetak / Simpan PDF</button>
+<a href="detail_resume.php?id=<?= urlencode($id) ?>" class="btn-action btn-back no-print">← Kembali</a>
 
 <div class="page">
-    
-    <table class="header-table">
+    <div class="doc-code">RI 02/2020/I</div>
+
+    <table class="form-table">
+        <colgroup>
+            <col class="col-label">
+            <col class="col-main">
+            <col class="col-side">
+        </colgroup>
+        <tr class="patient-row">
+            <td rowspan="3" class="logo-cell">
+                <img src="../assets/img/logo-ueu-unggul.png" alt="Universitas Esa Unggul" class="header-logo">
+            </td>
+            <td>Nomor RM</td>
+            <td><?= h($data['nomor_rm']) ?></td>
+        </tr>
+        <tr class="patient-row">
+            <td>Nama Pasien</td>
+            <td><?= h($data['nama_pasien']) ?></td>
+        </tr>
+        <tr class="birth-row">
+            <td>Tanggal Lahir</td>
+            <td><?= h($data['tanggal_lahir']) ?></td>
+        </tr>
+        <tr class="patient-row">
+            <td class="title-cell">RESUME MEDIS</td>
+            <td>Jenis Kelamin</td>
+            <td>
+                <span class="checkbox-custom <?= isChecked($data['jenis_kelamin'], 'L') ?>"></span>L
+                <span class="checkbox-custom <?= isChecked($data['jenis_kelamin'], 'P') ?>"></span>P
+            </td>
+        </tr>
         <tr>
-            <td width="30%">
-                <b>Universitas Esa Unggul</b> </td>
-            <td width="40%">
-                <div class="title-doc">RESUME MEDIS</div> </td>
-            <td width="30%" class="kode-doc">
-                RI 02/2020/1 </td>
+            <td colspan="3" class="care-cell">
+                <div class="care-grid">
+                    <div>Tanggal Masuk <span class="colon">:</span></div>
+                    <div><?= h($data['tgl_masuk']) ?></div>
+                    <div>Tanggal Keluar: <?= h($data['tgl_keluar']) ?></div>
+                    <div>Lama Dirawat: <?= h($data['lama_dirawat']) ?> Hari</div>
+                    <div>Ruang Rawat <span class="colon">:</span></div>
+                    <div><?= h($data['ruang_rawat']) ?></div>
+                    <div></div>
+                    <div></div>
+                    <div>DPJP Utama <span class="colon">:</span></div>
+                    <div><?= h($data['dpjp_utama']) ?></div>
+                    <div></div>
+                    <div></div>
+                    <div>Rawat Bersama <span class="colon">:</span></div>
+                    <div class="checkbox-line">
+                        <span class="checkbox-custom <?= isChecked($data['rawat_bersama'], 'Ya') ?>"></span>Ya
+                        <span class="checkbox-custom <?= isChecked($data['rawat_bersama'], 'Tidak') ?>"></span> Tidak
+                    </div>
+                    <div></div>
+                    <div></div>
+                </div>
+                <div class="dpjp-list">
+                    1. <?= h($data['dpjp_lain_1']) ?><br>
+                    2. <?= h($data['dpjp_lain_2']) ?><br>
+                    3. <?= h($data['dpjp_lain_3']) ?>
+                </div>
+                <div>Diagnosa Masuk : <?= h($data['diagnosa_masuk']) ?></div>
+            </td>
+        </tr>
+        <tr class="tall-riwayat">
+            <td class="label">Ringkasan Riwayat Penyakit</td>
+            <td colspan="2"><?= multiline($data['riwayat_penyakit']) ?></td>
+        </tr>
+        <tr class="row-fisik">
+            <td class="label">Pemeriksaan Fisik</td>
+            <td colspan="2">
+                <div class="vitals">
+                    <span>TD: <?= h($data['td']) ?></span>
+                    <span>N: <?= h($data['n']) ?></span>
+                    <span>S: <?= h($data['s']) ?></span>
+                    <span>P: <?= h($data['p']) ?></span>
+                    <span>Sat O<sub>2</sub>: <?= h($data['sat_o2']) ?></span>
+                </div>
+            </td>
+        </tr>
+        <tr class="tall-lab">
+            <td class="label">Laboratorium</td>
+            <td colspan="2"><?= multiline($data['laboratorium']) ?></td>
+        </tr>
+        <tr class="tall-penunjang">
+            <td class="label">Penunjang Lain</td>
+            <td colspan="2"><?= multiline($data['penunjang_lain']) ?></td>
+        </tr>
+        <tr class="diag-row">
+            <td class="label">Diagnosa Utama</td>
+            <td><?= h($data['diagnosa_utama']) ?></td>
+            <td>Kode ICD: <?= h($data['icd_utama']) ?></td>
+        </tr>
+        <tr class="diag-secondary">
+            <td class="label">Diagnosa Sekunder</td>
+            <td><?= h($data['diagnosa_sekunder_1']) ?></td>
+            <td>
+                Kode ICD: <?= h($data['icd_sekunder_1']) ?><br>
+                Kode ICD:<br>
+                Kode ICD:<br>
+                Kode ICD:
+            </td>
+        </tr>
+    </table>
+</div>
+
+<div class="page">
+    <div class="doc-code">RI 02/2020/I</div>
+
+    <table class="form-table">
+        <colgroup>
+            <col class="col-label">
+            <col class="col-main">
+            <col class="col-side">
+        </colgroup>
+        <tr class="procedure-row">
+            <td class="label">Prosedur/Operasi</td>
+            <td><?= h($data['prosedur_operasi']) ?></td>
+            <td>
+                Kode ICD: <?= h($data['icd_prosedur_1']) ?><br>
+                Kode ICD: <?= h($data['icd_prosedur_2']) ?>
+            </td>
+        </tr>
+        <tr class="medicine-row">
+            <td class="label">Pengobatan Selama Dirawat</td>
+            <td colspan="2"><?= multiline($data['pengobatan']) ?></td>
+        </tr>
+        <tr class="condition-row">
+            <td class="label">Kondisi Pulang</td>
+            <td colspan="2" class="checkbox-line">
+                <span class="checkbox-custom <?= isChecked($data['kondisi_pulang'], 'Diijinkan Pulang') ?>"></span>Diijinkan Pulang
+                <span class="checkbox-custom <?= isChecked($data['kondisi_pulang'], 'Dirujuk') ?>"></span>Dirujuk
+                <span class="checkbox-custom <?= isChecked($data['kondisi_pulang'], 'Atas Permintaan Sendiri') ?>"></span>Atas Permintaan Sendiri<br>
+                <span class="checkbox-custom <?= isChecked($data['kondisi_pulang'], 'Meninggal') ?>"></span>Meninggal
+                <span class="checkbox-custom <?= isChecked($data['kondisi_pulang'], 'Melarikan Diri') ?>"></span> Melarikan Diri
+            </td>
+        </tr>
+        <tr class="instruction-row">
+            <td class="label">Instruksi Pulang</td>
+            <td colspan="2"><?= multiline($data['instruksi_pulang']) ?></td>
         </tr>
     </table>
 
-    <div class="box-section row-grid">
-        <div class="col-half">
-            <table class="identitas">
-                <tr>
-                    <td class="label">Nomor RM</td> <td class="titik-dua">:</td>
-                    <td><?= htmlspecialchars($data['nomor_rm'] ?? '') ?></td>
-                </tr>
-                <tr>
-                    <td class="label">Nama Pasien</td> <td class="titik-dua">:</td>
-                    <td><?= htmlspecialchars($data['nama_pasien'] ?? '') ?></td>
-                </tr>
-            </table>
-        </div>
-        <div class="col-half">
-            <table class="identitas">
-                <tr>
-                    <td class="label">Tanggal Lahir</td> <td class="titik-dua">:</td>
-                    <td><?= htmlspecialchars($data['tanggal_lahir'] ?? '') ?></td>
-                </tr>
-                <tr>
-                    <td class="label">Jenis Kelamin</td> <td class="titik-dua">:</td>
-                    <td>
-                        <span class="checkbox-custom <?= isChecked($data['jenis_kelamin'], 'L') ?>"></span> L &nbsp;&nbsp; <span class="checkbox-custom <?= isChecked($data['jenis_kelamin'], 'P') ?>"></span> P </td>
-                </tr>
-            </table>
+    <div class="signature-area">
+        <div class="date-line">..........................,..........................</div>
+        <div class="signature-box">
+            <div>Tanda Tangan</div>
+            <?php if ($dokterPulang && !empty($dokterPulang['tanda_tangan'])): ?>
+                <img src="../<?= h($dokterPulang['tanda_tangan']) ?>" alt="Tanda tangan <?= h($namaDpjpPulang) ?>" class="signature-image">
+            <?php else: ?>
+                <div class="signature-placeholder"></div>
+            <?php endif; ?>
+            <div class="barcode-wrap"><?= code128BSvg($barcodeDokter, 58, 1) ?></div>
+            <div>(<?= h($namaDpjpPulang) ?>)</div>
+            <?php if ($dokterPulang): ?>
+                <div class="doctor-meta"><?= h($dokterPulang['nomor_dokter']) ?> | <?= h($dokterPulang['jenis_dokter']) ?><?= !empty($dokterPulang['spesialis']) ? ' - ' . h($dokterPulang['spesialis']) : '' ?></div>
+            <?php endif; ?>
         </div>
     </div>
-
-    <div class="box-section row-grid">
-        <div class="col-half">
-            <table class="identitas">
-                <tr><td class="label">Tanggal Masuk</td><td class="titik-dua">:</td><td><?= htmlspecialchars($data['tgl_masuk'] ?? '') ?></td></tr> <tr><td class="label">Lama Dirawat</td><td class="titik-dua">:</td><td><?= htmlspecialchars($data['lama_dirawat'] ?? '') ?> Hari</td></tr> <tr><td class="label">DPJP Utama</td><td class="titik-dua">:</td><td><?= htmlspecialchars($data['dpjp_utama'] ?? '') ?></td></tr> </table>
-        </div>
-        <div class="col-half">
-            <table class="identitas">
-                <tr><td class="label">Tanggal Keluar</td><td class="titik-dua">:</td><td><?= htmlspecialchars($data['tgl_keluar'] ?? '') ?></td></tr> <tr><td class="label">Ruang Rawat</td><td class="titik-dua">:</td><td><?= htmlspecialchars($data['ruang_rawat'] ?? '') ?></td></tr> <tr>
-                    <td class="label">Rawat Bersama</td> <td class="titik-dua">:</td>
-                    <td>
-                        <span class="checkbox-custom <?= isChecked($data['rawat_bersama'], 'Ya') ?>"></span> Ya &nbsp;&nbsp;
-                        <span class="checkbox-custom <?= isChecked($data['rawat_bersama'], 'Tidak') ?>"></span> Tidak
-                    </td>
-                </tr>
-            </table>
-        </div>
-    </div>
-
-    <div class="box-section">
-        <table class="identitas">
-            <tr><td class="label" style="width: 180px;">Diagnosa Masuk</td><td class="titik-dua">:</td><td><?= htmlspecialchars($data['diagnosa_masuk'] ?? '') ?></td></tr> <tr><td class="label" style="width: 180px;">Ringkasan Riwayat Penyakit</td><td class="titik-dua">:</td><td><?= nl2br(htmlspecialchars($data['riwayat_penyakit'] ?? '')) ?></td></tr> <tr>
-                <td class="label" style="width: 180px;">Pemeriksaan Fisik</td> <td class="titik-dua">:</td>
-                <td>
-                    TD: <?= htmlspecialchars($data['td'] ?? '___') ?> &nbsp; N: <?= htmlspecialchars($data['n'] ?? '___') ?> &nbsp; S: <?= htmlspecialchars($data['s'] ?? '___') ?> &nbsp; P: <?= htmlspecialchars($data['p'] ?? '___') ?> &nbsp; Sat O2: <?= htmlspecialchars($data['sat_o2'] ?? '___') ?> </td>
-            </tr>
-            <tr><td class="label" style="width: 180px;">Laboratorium</td><td class="titik-dua">:</td><td><?= nl2br(htmlspecialchars($data['laboratorium'] ?? '')) ?></td></tr> <tr><td class="label" style="width: 180px;">Penunjang Lain</td><td class="titik-dua">:</td><td><?= nl2br(htmlspecialchars($data['penunjang_lain'] ?? '')) ?></td></tr> </table>
-    </div>
-
-    <div class="box-section">
-        <div style="margin-bottom: 5px;">
-            <span class="label">Diagnosa Utama :</span><br> <?= htmlspecialchars($data['diagnosa_utama'] ?? '') ?>
-            <div class="icd-box">Kode ICD: <b><?= htmlspecialchars($data['icd_utama'] ?? '') ?></b></div> </div>
-        <hr style="border-top: 1px dashed #ccc;">
-        <div style="margin-bottom: 5px;">
-            <span class="label">Diagnosa Sekunder :</span><br> <?= htmlspecialchars($data['diagnosa_sekunder_1'] ?? '') ?>
-            <div class="icd-box">Kode ICD: <b><?= htmlspecialchars($data['icd_sekunder_1'] ?? '') ?></b></div> </div>
-    </div>
-
-    <div class="box-section">
-        <div style="margin-bottom: 5px;">
-            <span class="label">Prosedur/Operasi :</span><br> <?= htmlspecialchars($data['prosedur_operasi'] ?? '') ?>
-            <div class="icd-box">Kode ICD: <b><?= htmlspecialchars($data['icd_prosedur_1'] ?? '') ?></b></div> </div>
-    </div>
-
-    <div class="box-section">
-        <div class="label">Pengobatan Selama Dirawat :</div> <div style="padding: 5px 0;">
-            <?= nl2br(htmlspecialchars($data['pengobatan'] ?? '')) ?>
-        </div>
-    </div>
-
-    <div class="box-section">
-        <div class="label">Kondisi Pulang :</div> <div style="margin: 8px 0;" class="row-grid">
-            <div style="width: 33%;">
-                <span class="checkbox-custom <?= isChecked($data['kondisi_pulang'], 'Diijinkan Pulang') ?>"></span> Diijinkan Pulang<br> <span class="checkbox-custom <?= isChecked($data['kondisi_pulang'], 'Dirujuk') ?>"></span> Dirujuk </div>
-            <div style="width: 33%;">
-                <span class="checkbox-custom <?= isChecked($data['kondisi_pulang'], 'Atas Permintaan Sendiri') ?>"></span> Atas Permintaan Sendiri<br> <span class="checkbox-custom <?= isChecked($data['kondisi_pulang'], 'Meninggal') ?>"></span> Meninggal </div>
-            <div style="width: 33%;">
-                <span class="checkbox-custom <?= isChecked($data['kondisi_pulang'], 'Melarikan Diri') ?>"></span> Melarikan Diri </div>
-        </div>
-        <hr style="border-top: 1px dashed #ccc;">
-        <table class="identitas">
-            <tr><td class="label" style="width: 150px;">Instruksi Pulang</td><td class="titik-dua">:</td><td><?= nl2br(htmlspecialchars($data['instruksi_pulang'] ?? '')) ?></td></tr> </table>
-    </div>
-
-    <div style="text-align: right; margin-top: 40px; padding-right: 30px;">
-        <br><br><br>
-        ( <u><b><?= htmlspecialchars($data['nama_dpjp_pulang'] ?? '..................................') ?></b></u> )<br> Nama DPJP </div>
-
 </div>
 
 <script>
