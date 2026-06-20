@@ -336,12 +336,37 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <textarea name="riwayat_penyakit" class="form-control" rows="3"><?= formValue($editData, 'riwayat_penyakit') ?></textarea>
             </div>
             <label class="form-label fw-bold">Pemeriksaan Fisik:</label>
-            <div class="row mb-3">
-                <div class="col"><input type="text" name="td" class="form-control" placeholder="TD" value="<?= formValue($editData, 'td') ?>"></div>
-                <div class="col"><input type="text" name="n" class="form-control" placeholder="Nadi" value="<?= formValue($editData, 'n') ?>"></div>
-                <div class="col"><input type="text" name="s" class="form-control" placeholder="Suhu" value="<?= formValue($editData, 's') ?>"></div>
-                <div class="col"><input type="text" name="p" class="form-control" placeholder="Pernapasan" value="<?= formValue($editData, 'p') ?>"></div>
-                <div class="col"><input type="text" name="sat_o2" class="form-control" placeholder="Sat O2" value="<?= formValue($editData, 'sat_o2') ?>"></div>
+            <div class="row mb-3 g-2">
+                <div class="col">
+                    <div class="input-group">
+                        <input type="text" name="td" class="form-control" placeholder="TD" value="<?= formValue($editData, 'td') ?>">
+                        <span class="input-group-text bg-light text-muted" style="font-size: 0.85rem;">mmHg</span>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="input-group">
+                        <input type="text" name="n" class="form-control" placeholder="Nadi" value="<?= formValue($editData, 'n') ?>">
+                        <span class="input-group-text bg-light text-muted" style="font-size: 0.85rem;">x/m</span>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="input-group">
+                        <input type="text" name="s" class="form-control" placeholder="Suhu" value="<?= formValue($editData, 's') ?>">
+                        <span class="input-group-text bg-light text-muted" style="font-size: 0.85rem;">°C</span>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="input-group">
+                        <input type="text" name="p" class="form-control" placeholder="Napas" value="<?= formValue($editData, 'p') ?>">
+                        <span class="input-group-text bg-light text-muted" style="font-size: 0.85rem;">x/m</span>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="input-group">
+                        <input type="text" name="sat_o2" class="form-control" placeholder="Sat O2" value="<?= formValue($editData, 'sat_o2') ?>">
+                        <span class="input-group-text bg-light text-muted" style="font-size: 0.85rem;">%</span>
+                    </div>
+                </div>
             </div>
 
             <h5 class="section-title">Penunjang Diagnosa</h5>
@@ -606,11 +631,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (type === 'prosedur') btnClass = 'btn-success';
         
         row.innerHTML = `
-            <input type="text" class="form-control icd-display" value="${escapeHtml(displayValue)}" readonly style="cursor: pointer; background-color: #fff;" placeholder="Klik tombol search di kanan ➡️">
+            <input type="text" class="form-control icd-display border-0 border-bottom rounded-0 px-1" value="${escapeHtml(displayValue)}" readonly style="cursor: pointer; background-color: transparent; box-shadow: none;" placeholder="Klik tombol search bulat di kanan ➡️">
             <input type="hidden" class="icd-code" value="${escapeHtml(code)}">
             <input type="hidden" class="icd-name" value="${escapeHtml(name)}">
-            <button type="button" class="btn ${btnClass} btn-search" onclick="openSearchModal(this, '${type}')">🔍</button>
-            <button type="button" class="btn btn-outline-danger btn-delete d-none" onclick="deleteIcdRow(this)">Hapus</button>
+            <button type="button" class="btn ${btnClass} btn-search rounded-circle shadow-sm" style="width: 38px; height: 38px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="openSearchModal(this, '${type}')">🔍</button>
+            <button type="button" class="btn btn-outline-danger btn-delete d-none rounded-pill" onclick="deleteIcdRow(this)">Hapus</button>
         `;
         
         const displayInput = row.querySelector('.icd-display');
