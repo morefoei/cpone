@@ -43,11 +43,14 @@ if (!$result) {
             </div>
             
             <div>
+                <a href="registrasi.php" class="btn btn-outline-primary shadow-sm me-2">
+                    Registrasi
+                </a>
                 <a href="dokter.php" class="btn btn-outline-secondary shadow-sm me-2">
                     Master Dokter
                 </a>
                 <a href="tambah_resume.php" class="btn btn-primary shadow-sm me-2">
-                    + Tambah Data
+                    Buat E-Resume
                 </a>
                 <a href="export-excel.php" class="btn btn-success shadow-sm">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-excel me-1" viewBox="0 0 16 16">
