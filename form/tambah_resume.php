@@ -301,26 +301,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <label class="form-label">Tanggal Masuk</label>
                     <input type="date" name="tgl_masuk" id="tglMasukInput" class="form-control" value="<?= formValue($editData, 'tgl_masuk') ?>" required readonly>
                 </div>
-                <div class="col-md-3 mb-3">
-                    <label class="form-label">Tanggal Keluar</label>
-                    <input type="date" name="tgl_keluar" id="tglKeluarInput" class="form-control" value="<?= formValue($editData, 'tgl_keluar') ?>">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Tanggal Keluar <span class="text-danger">*</span></label>
+                    <input type="date" name="tgl_keluar" class="form-control" value="<?= formValue($editData, 'tgl_keluar') ?>">
                 </div>
                 <div class="col-md-3 mb-3">
                     <label class="form-label">Lama Dirawat (Hari)</label>
                     <input type="number" name="lama_dirawat" id="lamaDirawatInput" class="form-control bg-light" value="<?= formValue($editData, 'lama_dirawat') ?>" readonly>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <label class="form-label">Ruang Rawat</label>
-                    <input type="text" name="ruang_rawat" class="form-control" value="<?= formValue($editData, 'ruang_rawat') ?>">
                 </div>
             </div>
 
             <h5 class="section-title">Dokter Penanggung Jawab</h5>
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label class="form-label">DPJP Utama</label>
+                    <label class="form-label">DPJP Utama <span class="text-danger">*</span></label>
                     <input type="text" id="dpjpUtamaSearch" class="form-control mb-2" placeholder="Cari nama / nomor / spesialis dokter">
-                    <select name="dpjp_utama_dokter_id" id="dpjpUtamaSelect" class="form-select" required>
+                    <select name="dpjp_utama_dokter_id" id="dpjpUtamaSelect" class="form-select">
                         <option value="">-- Pilih Dokter --</option>
                         <?php foreach ($dokterList as $dokter): ?>
                             <option value="<?= (int) $dokter['id'] ?>" data-search="<?= htmlspecialchars(strtolower(dokterLabel($dokter)), ENT_QUOTES, 'UTF-8') ?>" <?= (int) ($editData['dpjp_utama_dokter_id'] ?? 0) === (int) $dokter['id'] ? 'selected' : '' ?>>
@@ -328,6 +324,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             </option>
                         <?php endforeach; ?>
                     </select>
+                    <div class="mt-2 d-none" id="dpjpUtamaWarning">
+                        <span class="text-danger">⚠️ Dokter tidak ditemukan.</span>
+                        <span class="text-muted">Pilih DPJP Utama dari master dokter.</span>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
                     <input type="hidden" name="dpjp_utama" id="dpjpUtamaName">
                     <small class="text-muted">Pilihan ini dipakai untuk tanda tangan dan barcode di cetak resume.</small>
                 </div>
@@ -344,7 +346,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <span class="text-muted">Pilih DPJP Utama dari master dokter.</span>
                     </div>
                 </div>
-                <div class="col-md-6 mb-3"></div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label">DPJP Lainnya 1 (Opsional)</label>
                     <input type="text" name="dpjp_lain_1" class="form-control" value="<?= formValue($editData, 'dpjp_lain_1') ?>">
@@ -421,7 +422,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <button type="button" class="btn btn-danger btn-search rounded-circle shadow-sm" style="width: 38px; height: 38px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="openSearchModal('utama')">🔍</button>
                     </div>
                     <div id="diagnosaUtamaList"></div>
-                    <input type="hidden" name="diagnosa_utama" id="diagnosaUtamaHidden" value="<?= formValue($editData, 'diagnosa_utama') ?>" required>
+                    <input type="hidden" name="diagnosa_utama" id="diagnosaUtamaHidden" value="<?= formValue($editData, 'diagnosa_utama') ?>">
                     <input type="hidden" name="icd_utama" id="icdUtamaHidden" value="<?= formValue($editData, 'icd_utama') ?>">
                 </div>
             </div>
@@ -460,9 +461,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <h5 class="section-title">Rencana Pulang</h5>
             <div class="row">
                 <div class="col-md-4 mb-3">
-                    <label class="form-label">Kondisi Pulang</label>
-                    <select name="kondisi_pulang" class="form-select" required>
-                        <option value="">-- Pilih Kondisi --</option>
+                    <label class="form-label">Kondisi Pulang <span class="text-danger">*</span></label>
+                    <select name="kondisi_pulang" class="form-select">
+                        <option value="">Pilih Kondisi...</option>
                         <option value="Diijinkan Pulang" <?= formSelected($editData, 'kondisi_pulang', 'Diijinkan Pulang') ?>>Diijinkan Pulang</option>
                         <option value="Dirujuk" <?= formSelected($editData, 'kondisi_pulang', 'Dirujuk') ?>>Dirujuk</option>
                         <option value="Atas Permintaan Sendiri" <?= formSelected($editData, 'kondisi_pulang', 'Atas Permintaan Sendiri') ?>>Atas Permintaan Sendiri</option>

@@ -72,22 +72,25 @@ $registrasiSql = "SELECT r.*, tr.id AS resume_id
 $registrasiResult = mysqli_query($koneksi, $registrasiSql);
 $registrasiResult = mysqli_query($koneksi, $registrasiSql);
 
+// Syarat E-Resume dianggap sudah lengkap:
+$condLengkap = "(diagnosa_utama IS NOT NULL AND trim(diagnosa_utama) != '') AND (tgl_keluar IS NOT NULL AND trim(tgl_keluar) != '') AND (dpjp_utama_dokter_id IS NOT NULL AND dpjp_utama_dokter_id > 0) AND (kondisi_pulang IS NOT NULL AND trim(kondisi_pulang) != '')";
+
 // Ambil E-Resume Draft (Belum Lengkap)
-$sqlDraft = "SELECT * FROM tabel_resume_medis WHERE diagnosa_utama IS NULL OR trim(diagnosa_utama) = '' ORDER BY id DESC LIMIT $limit OFFSET $offset";
+$sqlDraft = "SELECT * FROM tabel_resume_medis WHERE NOT ($condLengkap) ORDER BY id DESC LIMIT $limit OFFSET $offset";
 $resultDraft = mysqli_query($koneksi, $sqlDraft);
 
 // Ambil E-Resume Selesai (Sudah Lengkap)
-$sqlSelesai = "SELECT * FROM tabel_resume_medis WHERE diagnosa_utama IS NOT NULL AND trim(diagnosa_utama) != '' ORDER BY id DESC LIMIT $limit OFFSET $offset";
+$sqlSelesai = "SELECT * FROM tabel_resume_medis WHERE $condLengkap ORDER BY id DESC LIMIT $limit OFFSET $offset";
 $resultSelesai = mysqli_query($koneksi, $sqlSelesai);
 
 // Hitung total untuk pagination
 $totalRegResult = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM tabel_registrasi");
 $totalReg = mysqli_fetch_assoc($totalRegResult)['total'];
 
-$totalDraftResult = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM tabel_resume_medis WHERE diagnosa_utama IS NULL OR trim(diagnosa_utama) = ''");
+$totalDraftResult = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM tabel_resume_medis WHERE NOT ($condLengkap)");
 $totalDraft = mysqli_fetch_assoc($totalDraftResult)['total'];
 
-$totalSelesaiResult = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM tabel_resume_medis WHERE diagnosa_utama IS NOT NULL AND trim(diagnosa_utama) != ''");
+$totalSelesaiResult = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM tabel_resume_medis WHERE $condLengkap");
 $totalSelesai = mysqli_fetch_assoc($totalSelesaiResult)['total'];
 
 $totalRows = max($totalReg, $totalDraft, $totalSelesai);
@@ -213,7 +216,7 @@ if (!$registrasiResult || !$resultDraft || !$resultSelesai) {
                         <th>Nama Pasien</th>
                         <th>Tgl Masuk</th>
                         <th>Tgl Keluar</th>
-                        <th>Diagnosa Masuk</th>
+                        <th>Belum Lengkap</th>
                         <th>Kondisi Pulang</th>
                         <th>Aksi</th>
                     </tr>
@@ -224,13 +227,27 @@ if (!$registrasiResult || !$resultDraft || !$resultSelesai) {
                         while($row = mysqli_fetch_assoc($resultDraft)) {
                             $tglMasuk = !empty($row['tgl_masuk']) ? date('d-M-Y', strtotime($row['tgl_masuk'])) : '-'; 
                             $tglKeluar = !empty($row['tgl_keluar']) ? date('d-M-Y', strtotime($row['tgl_keluar'])) : '-';
+                            
+                            $missing = [];
+                            if (empty($row['tgl_keluar'])) $missing[] = 'Tgl Keluar';
+                            if (empty($row['dpjp_utama_dokter_id']) || $row['dpjp_utama_dokter_id'] == 0) $missing[] = 'DPJP Utama';
+                            if (empty(trim($row['diagnosa_utama'] ?? ''))) $missing[] = 'Diagnosa Utama';
+                            if (empty(trim($row['kondisi_pulang'] ?? ''))) $missing[] = 'Kondisi Pulang';
+                            
+                            $missingText = implode(', ', $missing);
                             ?>
                             <tr>
                                 <td><span class="badge bg-secondary"><?= htmlspecialchars($row['nomor_rm'] ?? '-') ?></span></td>
                                 <td><?= htmlspecialchars($row['nama_pasien'] ?? '-') ?></td>
                                 <td><?= $tglMasuk ?></td>
                                 <td><?= $tglKeluar ?></td>
-                                <td><span class="text-danger fst-italic">Belum ada diagnosa ICD-10 utama</span></td>
+                                <td>
+                                    <?php if (!empty($missing)): ?>
+                                        <span class="text-danger fst-italic"><small>Kurang: <?= $missingText ?></small></span>
+                                    <?php else: ?>
+                                        <span class="text-success"><small>Siap disimpan</small></span>
+                                    <?php endif; ?>
+                                </td>
                                 <td><?= htmlspecialchars($row['kondisi_pulang'] ?? '-') ?></td>
                                 <td>
                                     <a href="/form/tambah_resume?id=<?= (int) $row['id'] ?>" class="btn btn-sm btn-primary">Lengkapi Data</a>
