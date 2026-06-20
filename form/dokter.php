@@ -8,10 +8,31 @@ include __DIR__ . '/dokter_helpers.php';
 
 ensureDokterSchema($koneksi);
 
-$message = '';
+$message = $_GET['msg'] ?? '';
 $error = '';
 
+if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
+    $delId = (int)$_GET['id'];
+    if (mysqli_query($koneksi, "DELETE FROM tabel_dokter WHERE id = $delId")) {
+        header("Location: dokter.php?msg=" . urlencode('Data dokter berhasil dihapus.'));
+        exit;
+    } else {
+        $error = "Gagal menghapus dokter.";
+    }
+}
+
+$editId = 0;
+$editData = null;
+if (isset($_GET['action']) && $_GET['action'] === 'edit' && isset($_GET['id'])) {
+    $editId = (int)$_GET['id'];
+    $res = mysqli_query($koneksi, "SELECT * FROM tabel_dokter WHERE id = $editId");
+    if ($res && mysqli_num_rows($res) > 0) {
+        $editData = mysqli_fetch_assoc($res);
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $post_id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
     $nama_dokter = mysqli_real_escape_string($koneksi, trim($_POST['nama_dokter'] ?? ''));
     $nomor_dokter = mysqli_real_escape_string($koneksi, trim($_POST['nomor_dokter'] ?? ''));
     $jenis_dokter = ($_POST['jenis_dokter'] ?? 'Umum') === 'Spesialis' ? 'Spesialis' : 'Umum';
@@ -55,11 +76,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($error === '') {
-        $query = "INSERT INTO tabel_dokter (nama_dokter, nomor_dokter, jenis_dokter, spesialis, tanda_tangan)
-                  VALUES ('$nama_dokter', '$nomor_dokter', '$jenis_dokter', '$spesialis', '$tanda_tangan')";
+        if ($post_id > 0) {
+            $sqlTtd = $tanda_tangan ? ", tanda_tangan = '$tanda_tangan'" : "";
+            $query = "UPDATE tabel_dokter SET nama_dokter = '$nama_dokter', nomor_dokter = '$nomor_dokter', jenis_dokter = '$jenis_dokter', spesialis = '$spesialis' $sqlTtd WHERE id = $post_id";
+        } else {
+            $query = "INSERT INTO tabel_dokter (nama_dokter, nomor_dokter, jenis_dokter, spesialis, tanda_tangan)
+                      VALUES ('$nama_dokter', '$nomor_dokter', '$jenis_dokter', '$spesialis', '$tanda_tangan')";
+        }
 
         if (mysqli_query($koneksi, $query)) {
-            $message = 'Data dokter berhasil disimpan.';
+            $msg = $post_id > 0 ? 'Data dokter berhasil diupdate.' : 'Data dokter berhasil disimpan.';
+            header("Location: dokter.php?msg=" . urlencode($msg));
+            exit;
         } else {
             $error = 'Gagal menyimpan data dokter: ' . mysqli_error($koneksi);
         }
@@ -102,27 +130,33 @@ $dokterList = getDokterList($koneksi);
     <?php endif; ?>
 
     <div class="panel mb-4">
-        <h5 class="mb-3">Tambah Dokter</h5>
-        <form method="POST" enctype="multipart/form-data">
+        <h5 class="mb-3"><?= $editData ? 'Edit Dokter' : 'Tambah Dokter' ?></h5>
+        <?php if ($editData): ?>
+            <a href="dokter.php" class="btn btn-sm btn-outline-secondary mb-3">Batal Edit</a>
+        <?php endif; ?>
+        <form method="POST" enctype="multipart/form-data" action="dokter.php">
+            <?php if ($editData): ?>
+                <input type="hidden" name="id" value="<?= $editData['id'] ?>">
+            <?php endif; ?>
             <div class="row">
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Nama Dokter</label>
-                    <input type="text" name="nama_dokter" class="form-control" required>
+                    <input type="text" name="nama_dokter" class="form-control" value="<?= htmlspecialchars($editData['nama_dokter'] ?? '') ?>" required>
                 </div>
                 <div class="col-md-3 mb-3">
                     <label class="form-label">Nomor Dokter</label>
-                    <input type="text" name="nomor_dokter" class="form-control" required>
+                    <input type="text" name="nomor_dokter" class="form-control" value="<?= htmlspecialchars($editData['nomor_dokter'] ?? '') ?>" required>
                 </div>
                 <div class="col-md-2 mb-3">
                     <label class="form-label">Jenis Dokter</label>
                     <select name="jenis_dokter" class="form-select">
-                        <option value="Umum">Umum</option>
-                        <option value="Spesialis">Spesialis</option>
+                        <option value="Umum" <?= ($editData['jenis_dokter'] ?? '') === 'Umum' ? 'selected' : '' ?>>Umum</option>
+                        <option value="Spesialis" <?= ($editData['jenis_dokter'] ?? '') === 'Spesialis' ? 'selected' : '' ?>>Spesialis</option>
                     </select>
                 </div>
                 <div class="col-md-3 mb-3">
                     <label class="form-label">Spesialis</label>
-                    <input type="text" name="spesialis" class="form-control" placeholder="Contoh: Penyakit Dalam">
+                    <input type="text" name="spesialis" class="form-control" value="<?= htmlspecialchars($editData['spesialis'] ?? '') ?>" placeholder="Contoh: Penyakit Dalam">
                 </div>
             </div>
             <div class="row align-items-end">
@@ -131,7 +165,7 @@ $dokterList = getDokterList($koneksi);
                     <input type="file" name="tanda_tangan" class="form-control" accept=".png,.jpg,.jpeg,image/png,image/jpeg">
                 </div>
                 <div class="col-md-6 mb-3 text-md-end">
-                    <button type="submit" class="btn btn-primary px-4">Simpan Dokter</button>
+                    <button type="submit" class="btn <?= $editData ? 'btn-success' : 'btn-primary' ?> px-4"><?= $editData ? 'Update Dokter' : 'Simpan Dokter' ?></button>
                 </div>
             </div>
         </form>
@@ -147,6 +181,7 @@ $dokterList = getDokterList($koneksi);
                         <th>Nomor Dokter</th>
                         <th>Jenis</th>
                         <th>Tanda Tangan</th>
+                        <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -168,11 +203,15 @@ $dokterList = getDokterList($koneksi);
                                         <span class="text-muted">Belum ada</span>
                                     <?php endif; ?>
                                 </td>
+                                <td>
+                                    <a href="dokter.php?action=edit&id=<?= $dokter['id'] ?>" class="btn btn-sm btn-outline-primary">Edit</a>
+                                    <a href="dokter.php?action=delete&id=<?= $dokter['id'] ?>" class="btn btn-sm btn-outline-danger ms-1" onclick="return confirm('Apakah Anda yakin ingin menghapus dokter ini?');">Hapus</a>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="4" class="text-center text-muted py-3">Belum ada data dokter.</td>
+                            <td colspan="5" class="text-center text-muted py-3">Belum ada data dokter.</td>
                         </tr>
                     <?php endif; ?>
                 </tbody>

@@ -1,79 +1,65 @@
 <?php
-// Wajib memanggil autoload dari Composer
-require 'vendor/autoload.php';
+// Tampilkan semua error untuk proses debugging jika diperlukan (bisa dimatikan di production)
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+include dirname(__DIR__) . '/backend/koneksi.php';
 
-// 1. Buat object Spreadsheet baru
-$spreadsheet = new Spreadsheet();
-$sheet = $spreadsheet->getActiveSheet();
-$sheet->setTitle('Data Resume Medis');
+// Pastikan skema tabel resume sudah sesuai
+$query = "SELECT * FROM tabel_resume_medis ORDER BY id DESC";
+$result = mysqli_query($koneksi, $query);
 
-// 2. Set Header Kolom (Baris 1) sesuai format Resume Medis
-// Format ini disusun berdasarkan isian form dari data pasien, tanda vital, diagnosa, hingga kondisi pulang.
-$headers = [
-    'Nomor RM', 'Nama Pasien', 'Tanggal Lahir', 'Jenis Kelamin', 
-    'Tanggal Masuk', 'Tanggal Keluar', 'Lama Dirawat (Hari)', 'Ruang Rawat', 
-    'DPJP Utama', 'Rawat Bersama', 'DPJP Lainnya 1', 'DPJP Lainnya 2', 'DPJP Lainnya 3', 
-    'Diagnosa Masuk', 'Ringkasan Riwayat Penyakit', 'TD', 'N', 'S', 'P', 'Sat 02', 
-    'Laboratorium', 'Penunjang Lain', 'Diagnosa Utama', 'Kode ICD Utama', 
-    'Diagnosa Sekunder 1', 'Kode ICD Sek 1', 'Prosedur/Operasi', 'ICD Prosedur 1', 
-    'Pengobatan Selama Dirawat', 'Kondisi Pulang', 'Instruksi Pulang', 'Nama DPJP (Pulang)'
-];
-
-// Masukkan data header ke baris pertama (mulai dari A1)
-$sheet->fromArray($headers, NULL, 'A1');
-
-// Buat tulisan header menjadi Bold agar rapi
-$sheet->getStyle('A1:AF1')->getFont()->setBold(true);
-
-// 3. Data Dummy (Nantinya bagian ini Anda ganti dengan perulangan / while loop dari query Database Anda)
-$data = [
-    [
-        'RM-001234', 'Budi Santoso', '1985-08-15', 'L',
-        '2023-10-01', '2023-10-05', 4, 'Mawar Kelas 1',
-        'dr. Andi, Sp.PD', 'Ya', 'dr. Siti, Sp.JP', '-', '-',
-        'Demam hari ke-3', 'Pasien datang dengan keluhan demam, mual dan muntah', '120/80', '88', '38.5', '20', '98%',
-        'Hb: 13, Trombosit: 100k', 'Rontgen Thorax Normal', 'Dengue Haemorrhagic Fever', 'A91',
-        'Dyspepsia', 'K30', 'Pemasangan Infus', '38.99',
-        'Paracetamol 3x500mg, IVFD RL', 'Diijinkan Pulang', 'Banyak minum air, kontrol 3 hari lagi', 'dr. Andi, Sp.PD'
-    ],
-    // Baris data pasien kedua
-    [
-        'RM-001235', 'Siti Aminah', '1990-12-01', 'P',
-        '2023-10-02', '2023-10-04', 2, 'Melati Kelas 2',
-        'dr. Budi, Sp.PD', 'Tidak', '-', '-', '-',
-        'Nyeri ulu hati', 'Pasien mengeluh nyeri perut sejak 2 hari yang lalu', '110/70', '80', '36.5', '18', '99%',
-        'Normal', 'USG Abdomen Normal', 'Gastritis', 'K29.7',
-        '-', '-', '-', '-',
-        'Omeprazole 1x20mg', 'Diijinkan Pulang', 'Hindari makanan pedas', 'dr. Budi, Sp.PD'
-    ]
-];
-
-// Masukkan data pasien mulai dari baris kedua (A2)
-$sheet->fromArray($data, NULL, 'A2');
-
-// (Opsional) Mengatur lebar kolom agar otomatis menyesuaikan panjang teks
-foreach(range('A','Z') as $columnID) {
-    $sheet->getColumnDimension($columnID)->setAutoSize(true);
+if (!$result) {
+    die("Query error: " . mysqli_error($koneksi));
 }
-$sheet->getColumnDimension('AA')->setAutoSize(true);
-$sheet->getColumnDimension('AB')->setAutoSize(true);
-$sheet->getColumnDimension('AC')->setAutoSize(true);
-$sheet->getColumnDimension('AD')->setAutoSize(true);
-$sheet->getColumnDimension('AE')->setAutoSize(true);
-$sheet->getColumnDimension('AF')->setAutoSize(true);
 
-// 4. Proses output agar file langsung ter-download di browser
-header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-header('Content-Disposition: attachment;filename="Laporan_EResume_Medis.xlsx"');
-header('Cache-Control: max-age=0'); // Mencegah caching di browser
+// Set Header agar file didownload sebagai Excel (.xls)
+header("Content-Type: application/vnd.ms-excel; charset=utf-8");
+header("Content-Disposition: attachment; filename=Data_E_Resume_Medis.xls");
+header("Pragma: no-cache");
+header("Expires: 0");
 
-// Tulis dan kirim ke output stream
-$writer = new Xlsx($spreadsheet);
-$writer->save('php://output');
+// Buat struktur HTML Table agar rapi di Excel
+echo "<table border='1'>";
+echo "<tr>
+        <th style='background-color:#4CAF50;color:white;'>Nomor RM</th>
+        <th style='background-color:#4CAF50;color:white;'>Nama Pasien</th>
+        <th style='background-color:#4CAF50;color:white;'>Tanggal Lahir</th>
+        <th style='background-color:#4CAF50;color:white;'>Jenis Kelamin</th>
+        <th style='background-color:#4CAF50;color:white;'>Tanggal Masuk</th>
+        <th style='background-color:#4CAF50;color:white;'>Tanggal Keluar</th>
+        <th style='background-color:#4CAF50;color:white;'>Lama Dirawat</th>
+        <th style='background-color:#4CAF50;color:white;'>Ruang Rawat</th>
+        <th style='background-color:#4CAF50;color:white;'>DPJP Utama</th>
+        <th style='background-color:#4CAF50;color:white;'>Rawat Bersama</th>
+        <th style='background-color:#4CAF50;color:white;'>Diagnosa Masuk</th>
+        <th style='background-color:#4CAF50;color:white;'>Diagnosa Utama</th>
+        <th style='background-color:#4CAF50;color:white;'>ICD Utama</th>
+        <th style='background-color:#4CAF50;color:white;'>Kondisi Pulang</th>
+        <th style='background-color:#4CAF50;color:white;'>Instruksi Pulang</th>
+      </tr>";
 
-// Pastikan script berhenti di sini agar tidak ada kode HTML tambahan yang ikut tertulis ke dalam file Excel
+while ($row = mysqli_fetch_assoc($result)) {
+    echo "<tr>";
+    echo "<td>" . htmlspecialchars($row['nomor_rm'] ?? '-') . "</td>";
+    echo "<td>" . htmlspecialchars($row['nama_pasien'] ?? '-') . "</td>";
+    echo "<td>" . htmlspecialchars($row['tanggal_lahir'] ?? '-') . "</td>";
+    echo "<td>" . htmlspecialchars($row['jenis_kelamin'] ?? '-') . "</td>";
+    echo "<td>" . htmlspecialchars($row['tgl_masuk'] ?? '-') . "</td>";
+    echo "<td>" . htmlspecialchars($row['tgl_keluar'] ?? '-') . "</td>";
+    echo "<td>" . htmlspecialchars($row['lama_dirawat'] ?? '-') . "</td>";
+    echo "<td>" . htmlspecialchars($row['ruang_rawat'] ?? '-') . "</td>";
+    echo "<td>" . htmlspecialchars($row['dpjp_utama'] ?? '-') . "</td>";
+    echo "<td>" . htmlspecialchars($row['rawat_bersama'] ?? '-') . "</td>";
+    echo "<td>" . htmlspecialchars($row['diagnosa_masuk'] ?? '-') . "</td>";
+    echo "<td>" . htmlspecialchars($row['diagnosa_utama'] ?? '-') . "</td>";
+    echo "<td>" . htmlspecialchars($row['icd_utama'] ?? '-') . "</td>";
+    echo "<td>" . htmlspecialchars($row['kondisi_pulang'] ?? '-') . "</td>";
+    echo "<td>" . htmlspecialchars($row['instruksi_pulang'] ?? '-') . "</td>";
+    echo "</tr>";
+}
+
+echo "</table>";
 exit;
 ?>
