@@ -6,9 +6,13 @@ error_reporting(E_ALL);
 
 include dirname(__DIR__) . '/backend/koneksi.php';
 include __DIR__ . '/dokter_helpers.php';
+include __DIR__ . '/registrasi_helpers.php';
 
 $dokterList = getDokterList($koneksi);
+$registrasiList = getRegistrasiList($koneksi);
+$selectedRegistrasiId = (int) ($_GET['registrasi_id'] ?? 0);
 $dokterPreviewList = [];
+$registrasiPreviewList = [];
 
 foreach ($dokterList as $dokter) {
     $dokterPreviewList[(int) $dokter['id']] = [
@@ -19,8 +23,20 @@ foreach ($dokterList as $dokter) {
     ];
 }
 
+foreach ($registrasiList as $registrasi) {
+    $registrasiPreviewList[(int) $registrasi['id']] = [
+        'nomor_rm' => $registrasi['nomor_rm'] ?? '',
+        'nama_pasien' => $registrasi['nama_pasien'] ?? '',
+        'tanggal_lahir' => $registrasi['tanggal_lahir'] ?? '',
+        'jenis_kelamin' => $registrasi['jenis_kelamin'] ?? '',
+        'tgl_masuk' => $registrasi['tgl_masuk'] ?? '',
+        'penyakit' => $registrasi['penyakit'] ?? '',
+    ];
+}
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Escape semua input untuk keamanan
+    $registrasi_id = (int) ($_POST['registrasi_id'] ?? 0);
     $nomor_rm = mysqli_real_escape_string($koneksi, $_POST['nomor_rm']);
     $nama_pasien = mysqli_real_escape_string($koneksi, $_POST['nama_pasien']);
     $tanggal_lahir = mysqli_real_escape_string($koneksi, $_POST['tanggal_lahir']);
@@ -57,6 +73,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $nama_dpjp_pulang = mysqli_real_escape_string($koneksi, $_POST['nama_dpjp_pulang']);
     $dpjp_pulang_dokter_id = (int) ($_POST['dpjp_pulang_dokter_id'] ?? 0);
 
+    if ($registrasi_id > 0) {
+        $registrasi = getRegistrasiById($koneksi, $registrasi_id);
+        if ($registrasi) {
+            $nomor_rm = mysqli_real_escape_string($koneksi, $registrasi['nomor_rm']);
+            $nama_pasien = mysqli_real_escape_string($koneksi, $registrasi['nama_pasien']);
+            $tanggal_lahir = mysqli_real_escape_string($koneksi, $registrasi['tanggal_lahir'] ?? '');
+            $jenis_kelamin = mysqli_real_escape_string($koneksi, $registrasi['jenis_kelamin'] ?? '');
+            $tgl_masuk = mysqli_real_escape_string($koneksi, $registrasi['tgl_masuk']);
+            $diagnosa_masuk = mysqli_real_escape_string($koneksi, $registrasi['penyakit']);
+        } else {
+            $registrasi_id = 0;
+        }
+    }
+
     if ($dpjp_utama_dokter_id > 0) {
         $dokterUtama = getDokterById($koneksi, $dpjp_utama_dokter_id);
         if ($dokterUtama) {
@@ -75,13 +105,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Query super panjang untuk memasukkan semua data
     $query = "INSERT INTO tabel_resume_medis (
-        nomor_rm, nama_pasien, tanggal_lahir, jenis_kelamin, tgl_masuk, tgl_keluar, lama_dirawat, ruang_rawat,
+        registrasi_id, nomor_rm, nama_pasien, tanggal_lahir, jenis_kelamin, tgl_masuk, tgl_keluar, lama_dirawat, ruang_rawat,
         dpjp_utama, dpjp_utama_dokter_id, rawat_bersama, dpjp_lain_1, dpjp_lain_2, dpjp_lain_3, diagnosa_masuk, riwayat_penyakit,
         td, n, s, p, sat_o2, laboratorium, penunjang_lain, diagnosa_utama, icd_utama,
         diagnosa_sekunder_1, icd_sekunder_1, prosedur_operasi, icd_prosedur_1, icd_prosedur_2,
         pengobatan, kondisi_pulang, instruksi_pulang, nama_dpjp_pulang, dpjp_pulang_dokter_id
     ) VALUES (
-        '$nomor_rm', '$nama_pasien', '$tanggal_lahir', '$jenis_kelamin', '$tgl_masuk', '$tgl_keluar', '$lama_dirawat', '$ruang_rawat',
+        " . ($registrasi_id > 0 ? $registrasi_id : "NULL") . ", '$nomor_rm', '$nama_pasien', '$tanggal_lahir', '$jenis_kelamin', '$tgl_masuk', '$tgl_keluar', '$lama_dirawat', '$ruang_rawat',
         '$dpjp_utama', " . ($dpjp_utama_dokter_id > 0 ? $dpjp_utama_dokter_id : "NULL") . ", '$rawat_bersama', '$dpjp_lain_1', '$dpjp_lain_2', '$dpjp_lain_3', '$diagnosa_masuk', '$riwayat_penyakit',
         '$td', '$n', '$s', '$p', '$sat_o2', '$laboratorium', '$penunjang_lain', '$diagnosa_utama', '$icd_utama',
         '$diagnosa_sekunder_1', '$icd_sekunder_1', '$prosedur_operasi', '$icd_prosedur_1', '$icd_prosedur_2',
@@ -124,22 +154,37 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <form action="" method="POST">
             
             <h5 class="section-title">1. Identitas Pasien & Perawatan</h5>
+            <div class="mb-3">
+                <label class="form-label">Pilih Pasien dari Registrasi</label>
+                <select name="registrasi_id" id="registrasiSelect" class="form-select" required>
+                    <option value="">-- Pilih Data Registrasi --</option>
+                    <?php foreach ($registrasiList as $registrasi): ?>
+                        <?php
+                        $labelRegistrasi = trim(($registrasi['nomor_rm'] ?? '') . ' | ' . ($registrasi['nama_pasien'] ?? '') . ' | ' . ($registrasi['penyakit'] ?? ''), ' |');
+                        ?>
+                        <option value="<?= (int) $registrasi['id'] ?>" <?= (int) $registrasi['id'] === $selectedRegistrasiId ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($labelRegistrasi) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <small class="text-muted">Identitas pasien dan diagnosa masuk akan mengikuti data registrasi.</small>
+            </div>
             <div class="row">
                 <div class="col-md-3 mb-3">
                     <label class="form-label">Nomor RM</label>
-                    <input type="text" name="nomor_rm" class="form-control" required>
+                    <input type="text" name="nomor_rm" id="nomorRmInput" class="form-control" required readonly>
                 </div>
                 <div class="col-md-5 mb-3">
                     <label class="form-label">Nama Pasien</label>
-                    <input type="text" name="nama_pasien" class="form-control" required>
+                    <input type="text" name="nama_pasien" id="namaPasienInput" class="form-control" required readonly>
                 </div>
                 <div class="col-md-2 mb-3">
                     <label class="form-label">Tgl Lahir</label>
-                    <input type="date" name="tanggal_lahir" class="form-control">
+                    <input type="date" name="tanggal_lahir" id="tanggalLahirInput" class="form-control" readonly>
                 </div>
                 <div class="col-md-2 mb-3">
                     <label class="form-label">J. Kelamin</label>
-                    <select name="jenis_kelamin" class="form-select">
+                    <select name="jenis_kelamin" id="jenisKelaminSelect" class="form-select">
                         <option value="L">L</option>
                         <option value="P">P</option>
                     </select>
@@ -148,7 +193,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <div class="row">
                 <div class="col-md-3 mb-3">
                     <label class="form-label">Tanggal Masuk</label>
-                    <input type="date" name="tgl_masuk" class="form-control" required>
+                    <input type="date" name="tgl_masuk" id="tglMasukInput" class="form-control" required readonly>
                 </div>
                 <div class="col-md-3 mb-3">
                     <label class="form-label">Tanggal Keluar</label>
@@ -211,7 +256,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <h5 class="section-title">3. Klinis & Pemeriksaan Fisik</h5>
             <div class="mb-3">
                 <label class="form-label">Diagnosa Masuk</label>
-                <input type="text" name="diagnosa_masuk" class="form-control" required>
+                <input type="text" name="diagnosa_masuk" id="diagnosaMasukInput" class="form-control" required readonly>
             </div>
             <div class="mb-3">
                 <label class="form-label">Ringkasan Riwayat Penyakit</label>
@@ -327,7 +372,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+    const registrasiData = <?= json_encode($registrasiPreviewList, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
     const dokterData = <?= json_encode($dokterPreviewList, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+    const registrasiSelect = document.getElementById('registrasiSelect');
+    const nomorRmInput = document.getElementById('nomorRmInput');
+    const namaPasienInput = document.getElementById('namaPasienInput');
+    const tanggalLahirInput = document.getElementById('tanggalLahirInput');
+    const jenisKelaminSelect = document.getElementById('jenisKelaminSelect');
+    const tglMasukInput = document.getElementById('tglMasukInput');
+    const diagnosaMasukInput = document.getElementById('diagnosaMasukInput');
     const dpjpUtamaSearch = document.getElementById('dpjpUtamaSearch');
     const dpjpUtamaSelect = document.getElementById('dpjpUtamaSelect');
     const dpjpUtamaName = document.getElementById('dpjpUtamaName');
@@ -343,6 +396,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 "'": '&#039;'
             }[char];
         });
+    }
+
+    function updateRegistrasiFields() {
+        const selectedId = registrasiSelect.value;
+        const registrasi = registrasiData[selectedId];
+
+        nomorRmInput.value = registrasi ? registrasi.nomor_rm : '';
+        namaPasienInput.value = registrasi ? registrasi.nama_pasien : '';
+        tanggalLahirInput.value = registrasi ? registrasi.tanggal_lahir : '';
+        jenisKelaminSelect.value = registrasi ? registrasi.jenis_kelamin : 'L';
+        tglMasukInput.value = registrasi ? registrasi.tgl_masuk : '';
+        diagnosaMasukInput.value = registrasi ? registrasi.penyakit : '';
     }
 
     function updateDpjpUtamaPreview() {
@@ -380,6 +445,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     });
 
     dpjpUtamaSelect.addEventListener('change', updateDpjpUtamaPreview);
+    registrasiSelect.addEventListener('change', updateRegistrasiFields);
+    updateRegistrasiFields();
     updateDpjpUtamaPreview();
 </script>
 </body>

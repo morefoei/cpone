@@ -8,14 +8,27 @@ error_reporting(E_ALL);
 // 1. PANGGIL FILE KONEKSI DATABASE
 // ==========================================
 include dirname(__DIR__) . '/backend/koneksi.php';
+include __DIR__ . '/registrasi_helpers.php';
+
+ensureRegistrasiSchema($koneksi);
 
 // ==========================================
 // 2. AMBIL DATA DARI TABEL
 // ==========================================
-$sql = "SELECT * FROM tabel_resume_medis ORDER BY id DESC"; 
-$result = mysqli_query($koneksi, $sql); 
+$registrasiSql = "SELECT r.*, tr.id AS resume_id
+                  FROM tabel_registrasi r
+                  LEFT JOIN (
+                      SELECT registrasi_id, MAX(id) AS id
+                      FROM tabel_resume_medis
+                      WHERE registrasi_id IS NOT NULL
+                      GROUP BY registrasi_id
+                  ) tr ON tr.registrasi_id = r.id
+                  ORDER BY r.id DESC";
+$registrasiResult = mysqli_query($koneksi, $registrasiSql);
+$sql = "SELECT * FROM tabel_resume_medis WHERE diagnosa_utama IS NOT NULL AND diagnosa_utama <> '' ORDER BY id DESC";
+$result = mysqli_query($koneksi, $sql);
 
-if (!$result) {
+if (!$registrasiResult || !$result) {
     die("Query error: " . mysqli_error($koneksi));
 }
 ?>
@@ -30,6 +43,7 @@ if (!$result) {
     <style>
         body { background-color: #f8f9fa; }
         .table-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .section-heading { font-size: 1.1rem; font-weight: 700; margin: 24px 0 12px; }
     </style>
 </head>
 <body>
@@ -62,6 +76,61 @@ if (!$result) {
             </div>
         </div>
 
+        <div class="section-heading">List Registrasi</div>
+        <div class="table-responsive mb-4">
+            <table class="table table-hover table-bordered align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>No. RM</th>
+                        <th>Nama Pasien</th>
+                        <th>Tgl Lahir</th>
+                        <th>Jenis Kelamin</th>
+                        <th>Tgl Masuk</th>
+                        <th>Penyakit</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (mysqli_num_rows($registrasiResult) > 0): ?>
+                        <?php while ($row = mysqli_fetch_assoc($registrasiResult)): ?>
+                            <?php
+                            $tglLahir = !empty($row['tanggal_lahir']) ? date('d-M-Y', strtotime($row['tanggal_lahir'])) : '-';
+                            $tglMasuk = !empty($row['tgl_masuk']) ? date('d-M-Y', strtotime($row['tgl_masuk'])) : '-';
+                            ?>
+                            <tr>
+                                <td><span class="badge bg-secondary"><?= htmlspecialchars($row['nomor_rm'] ?? '-') ?></span></td>
+                                <td><?= htmlspecialchars($row['nama_pasien'] ?? '-') ?></td>
+                                <td><?= $tglLahir ?></td>
+                                <td><?= htmlspecialchars($row['jenis_kelamin'] ?? '-') ?></td>
+                                <td><?= $tglMasuk ?></td>
+                                <td><?= htmlspecialchars($row['penyakit'] ?? '-') ?></td>
+                                <td>
+                                    <?php if (!empty($row['resume_id'])): ?>
+                                        <span class="badge bg-success">Sudah E-Resume</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-warning text-dark">Belum E-Resume</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if (!empty($row['resume_id'])): ?>
+                                        <a href="detail_resume.php?id=<?= (int) $row['resume_id'] ?>" class="btn btn-sm btn-outline-primary">Lihat E-Resume</a>
+                                    <?php else: ?>
+                                        <a href="tambah_resume.php?registrasi_id=<?= (int) $row['id'] ?>" class="btn btn-sm btn-primary">Buat E-Resume</a>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endwhile; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-3">Belum ada data registrasi.</td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section-heading">List E-Resume</div>
         <div class="table-responsive">
             <table class="table table-hover table-bordered align-middle">
                 <thead class="table-light">

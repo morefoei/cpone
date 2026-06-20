@@ -4,6 +4,9 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 include dirname(__DIR__) . '/backend/koneksi.php';
+include __DIR__ . '/registrasi_helpers.php';
+
+ensureRegistrasiSchema($koneksi);
 
 $message = '';
 $error = '';
@@ -19,18 +22,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($nama_pasien === '' || $nomor_rm === '' || $tgl_masuk === '' || $penyakit === '') {
         $error = 'Nama pasien, nomor RM, tanggal masuk, dan penyakit wajib diisi.';
     } else {
-        $query = "INSERT INTO tabel_resume_medis (
-            nomor_rm, nama_pasien, tanggal_lahir, jenis_kelamin, tgl_masuk, tgl_keluar, lama_dirawat, ruang_rawat,
-            dpjp_utama, rawat_bersama, dpjp_lain_1, dpjp_lain_2, dpjp_lain_3, diagnosa_masuk, riwayat_penyakit,
-            td, n, s, p, sat_o2, laboratorium, penunjang_lain, diagnosa_utama, icd_utama,
-            diagnosa_sekunder_1, icd_sekunder_1, prosedur_operasi, icd_prosedur_1, icd_prosedur_2,
-            pengobatan, kondisi_pulang, instruksi_pulang, nama_dpjp_pulang
+        $query = "INSERT INTO tabel_registrasi (
+            nomor_rm, nama_pasien, tanggal_lahir, jenis_kelamin, tgl_masuk, penyakit
         ) VALUES (
-            '$nomor_rm', '$nama_pasien', '$tanggal_lahir', '$jenis_kelamin', '$tgl_masuk', '', '', '',
-            '', 'Tidak', '', '', '', '$penyakit', '',
-            '', '', '', '', '', '', '', '', '',
-            '', '', '', '', '',
-            '', '', '', ''
+            '$nomor_rm', '$nama_pasien', " . ($tanggal_lahir !== '' ? "'$tanggal_lahir'" : "NULL") . ", '$jenis_kelamin', '$tgl_masuk', '$penyakit'
         )";
 
         if (mysqli_query($koneksi, $query)) {
