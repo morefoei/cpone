@@ -256,8 +256,9 @@ function multiline($value) {
     </table>
 
     <div class="signature-area">
-        <div class="date-line text-end mb-2" style="text-align: right; font-size: 16px;">Dicetak pada: <?= $tanggalCetak ?> Pukul <?= $jamCetak ?> WIB</div>
+        <div></div> <!-- Empty left column -->
         <div class="signature-box">
+            <div style="font-size: 16px; margin-bottom: 10px;"><?= $tanggalCetak ?> Pukul <?= $jamCetak ?> WIB</div>
             <div>Tanda Tangan</div>
             <?php if ($dokterTtd && !empty($dokterTtd['tanda_tangan'])): ?>
                 <img src="../<?= h($dokterTtd['tanda_tangan']) ?>" alt="Tanda tangan <?= h($namaDokterTtd) ?>" class="signature-image">
@@ -267,7 +268,7 @@ function multiline($value) {
             <div class="barcode-wrap"><?= qrCodeImg($barcodeDokter, 100) ?></div>
             <div>(<?= h($namaDokterTtd) ?>)</div>
             <?php if ($dokterTtd): ?>
-                <div class="doctor-meta"><?= h($dokterTtd['nomor_dokter']) ?> | <?= h($dokterTtd['jenis_dokter']) ?><?= !empty($dokterTtd['spesialis']) ? ' - ' . h($dokterTtd['spesialis']) : '' ?></div>
+                <div style="margin-top: 2px;"><?= h($dokterTtd['nomor_dokter']) ?></div>
             <?php endif; ?>
         </div>
     </div>
