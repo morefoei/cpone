@@ -303,7 +303,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Tanggal Keluar <span class="text-danger">*</span></label>
-                    <input type="date" name="tgl_keluar" class="form-control" value="<?= formValue($editData, 'tgl_keluar') ?>">
+                    <input type="date" name="tgl_keluar" id="tglKeluarInput" class="form-control" value="<?= formValue($editData, 'tgl_keluar') ?>">
                 </div>
                 <div class="col-md-3 mb-3">
                     <label class="form-label">Lama Dirawat (Hari)</label>
