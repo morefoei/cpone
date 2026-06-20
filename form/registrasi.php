@@ -11,6 +11,19 @@ ensureRegistrasiSchema($koneksi);
 $message = '';
 $error = '';
 
+// Generate Nomor RM Otomatis (Format Terminal Digit Filing: XX-XX-XX)
+$queryRm = mysqli_query($koneksi, "SELECT id FROM tabel_registrasi ORDER BY id DESC LIMIT 1");
+$lastId = 0;
+if ($queryRm && mysqli_num_rows($queryRm) > 0) {
+    $rowRm = mysqli_fetch_assoc($queryRm);
+    $lastId = (int)$rowRm['id'];
+}
+$nextId = $lastId + 1;
+// Format menjadi 6 digit angka
+$strId = str_pad($nextId, 6, "0", STR_PAD_LEFT);
+// Gabungkan menjadi format XX-XX-XX
+$autoRm = substr($strId, 0, 2) . '-' . substr($strId, 2, 2) . '-' . substr($strId, 4, 2);
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nama_pasien = mysqli_real_escape_string($koneksi, trim($_POST['nama_pasien'] ?? ''));
     $tanggal_lahir = mysqli_real_escape_string($koneksi, $_POST['tanggal_lahir'] ?? '');
@@ -80,8 +93,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="text" name="nama_pasien" class="form-control" required>
                 </div>
                 <div class="col-md-4 mb-3">
-                    <label class="form-label">Nomor RM</label>
-                    <input type="text" name="nomor_rm" class="form-control" required>
+                    <label class="form-label">Nomor Rekam Medis</label>
+                    <input type="text" name="nomor_rm" class="form-control bg-light" value="<?= htmlspecialchars($autoRm) ?>" readonly required>
                 </div>
             </div>
 

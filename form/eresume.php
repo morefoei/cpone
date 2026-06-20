@@ -99,7 +99,7 @@ if (!$registrasiResult || !$result) {
             <table class="table table-hover table-bordered align-middle">
                 <thead class="table-light">
                     <tr>
-                        <th>No. RM</th>
+                        <th>NRM</th>
                         <th>Nama Pasien</th>
                         <th>Tgl Lahir</th>
                         <th>Jenis Kelamin</th>
@@ -153,7 +153,7 @@ if (!$registrasiResult || !$result) {
             <table class="table table-hover table-bordered align-middle">
                 <thead class="table-light">
                     <tr>
-                        <th>No. RM</th>
+                        <th>NRM</th>
                         <th>Nama Pasien</th>
                         <th>Tgl Masuk</th>
                         <th>Tgl Keluar</th>
