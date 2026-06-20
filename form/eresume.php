@@ -68,7 +68,6 @@ $registrasiSql = "SELECT r.*, tr.id AS resume_id
                       WHERE registrasi_id IS NOT NULL
                       GROUP BY registrasi_id
                   ) tr ON tr.registrasi_id = r.id
-                  WHERE tr.id IS NULL
                   ORDER BY r.id DESC LIMIT $limit OFFSET $offset";
 $registrasiResult = mysqli_query($koneksi, $registrasiSql);
 // Syarat E-Resume dianggap sudah lengkap:
@@ -83,7 +82,7 @@ $sqlSelesai = "SELECT * FROM tabel_resume_medis WHERE $condLengkap ORDER BY id D
 $resultSelesai = mysqli_query($koneksi, $sqlSelesai);
 
 // Hitung total untuk pagination
-$totalRegResult = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM tabel_registrasi r LEFT JOIN tabel_resume_medis tr ON tr.registrasi_id = r.id WHERE tr.id IS NULL");
+$totalRegResult = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM tabel_registrasi");
 $totalReg = mysqli_fetch_assoc($totalRegResult)['total'];
 
 $totalDraftResult = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM tabel_resume_medis WHERE NOT ($condLengkap)");
@@ -143,8 +142,7 @@ if (!$registrasiResult || !$resultDraft || !$resultSelesai) {
             </div>
         </div>
 
-        <?php if (mysqli_num_rows($registrasiResult) > 0): ?>
-        <div class="section-heading">List Registrasi Baru (Belum E-Resume)</div>
+        <div class="section-heading">List Registrasi</div>
         <div class="table-responsive mb-4">
             <table class="table table-hover table-bordered align-middle">
                 <thead class="table-light">
@@ -173,10 +171,18 @@ if (!$registrasiResult || !$resultDraft || !$resultSelesai) {
                                 <td><?= $tglMasuk ?></td>
                                 <td><?= htmlspecialchars($row['penyakit'] ?? '-') ?></td>
                                 <td>
-                                    <span class="badge bg-warning text-dark">Belum E-Resume</span>
+                                    <?php if (!empty($row['resume_id'])): ?>
+                                        <span class="badge bg-success">Sudah E-Resume</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-warning text-dark">Belum E-Resume</span>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
-                                    <a href="/form/tambah_resume?registrasi_id=<?= (int) $row['id'] ?>" class="btn btn-sm btn-primary mb-1">Buat E-Resume</a>
+                                    <?php if (!empty($row['resume_id'])): ?>
+                                        <a href="/form/detail_resume?id=<?= (int) $row['resume_id'] ?>" class="btn btn-sm btn-outline-primary mb-1">Lihat E-Resume</a>
+                                    <?php else: ?>
+                                        <a href="/form/tambah_resume?registrasi_id=<?= (int) $row['id'] ?>" class="btn btn-sm btn-primary mb-1">Buat E-Resume</a>
+                                    <?php endif; ?>
                                     
                                     <a href="/form/registrasi?action=edit&id=<?= (int) $row['id'] ?>" class="btn btn-sm btn-outline-warning mb-1">Edit</a>
 
@@ -186,10 +192,14 @@ if (!$registrasiResult || !$resultDraft || !$resultSelesai) {
                                 </td>
                             </tr>
                         <?php endwhile; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-3">Belum ada data registrasi.</td>
+                        </tr>
+                    <?php endif; ?>
                 </tbody>
             </table>
         </div>
-        <?php endif; ?>
 
         <div class="section-heading text-warning">List E-Resume (Draft / Belum Lengkap)</div>
         <div class="table-responsive mb-4">
