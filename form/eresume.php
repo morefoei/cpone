@@ -70,7 +70,7 @@ if (!$result) {
                         <th>Nama Pasien</th>
                         <th>Tgl Masuk</th>
                         <th>Tgl Keluar</th>
-                        <th>Diagnosa Utama</th>
+                        <th>Diagnosa / Penyakit</th>
                         <th>DPJP Utama</th>
                         <th>Kondisi Pulang</th>
                         <th>Aksi</th>
@@ -82,13 +82,14 @@ if (!$result) {
                         while($row = mysqli_fetch_assoc($result)) {
                             $tglMasuk = !empty($row['tgl_masuk']) ? date('d-M-Y', strtotime($row['tgl_masuk'])) : '-'; 
                             $tglKeluar = !empty($row['tgl_keluar']) ? date('d-M-Y', strtotime($row['tgl_keluar'])) : '-';
+                            $diagnosa = !empty($row['diagnosa_utama']) ? $row['diagnosa_utama'] : ($row['diagnosa_masuk'] ?? '-');
                             ?>
                             <tr>
                                 <td><span class="badge bg-secondary"><?= htmlspecialchars($row['nomor_rm'] ?? '-') ?></span></td>
                                 <td><?= htmlspecialchars($row['nama_pasien'] ?? '-') ?></td>
                                 <td><?= $tglMasuk ?></td>
                                 <td><?= $tglKeluar ?></td>
-                                <td><?= htmlspecialchars($row['diagnosa_utama'] ?? '-') ?></td>
+                                <td><?= htmlspecialchars($diagnosa) ?></td>
                                 <td><?= htmlspecialchars($row['dpjp_utama'] ?? '-') ?></td>
                                 <td><?= htmlspecialchars($row['kondisi_pulang'] ?? '-') ?></td>
                                 <td>
