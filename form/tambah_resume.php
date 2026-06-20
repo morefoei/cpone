@@ -383,7 +383,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <div class="row">
                 <div class="col-md-12 mb-3">
                     <label class="form-label text-danger fw-bold">Diagnosa Utama & Kode ICD</label>
-                    <div id="diagnosaUtamaContainer"></div>
+                    <div class="d-flex gap-2 mb-2">
+                        <input type="text" class="form-control border-0 border-bottom rounded-0 px-1 bg-transparent" readonly placeholder="Klik search di kanan untuk tambah diagnosa utama ➡️">
+                        <button type="button" class="btn btn-danger btn-search rounded-circle shadow-sm" style="width: 38px; height: 38px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="openSearchModal('utama')">🔍</button>
+                    </div>
+                    <div id="diagnosaUtamaList"></div>
                     <input type="hidden" name="diagnosa_utama" id="diagnosaUtamaHidden" value="<?= formValue($editData, 'diagnosa_utama') ?>" required>
                     <input type="hidden" name="icd_utama" id="icdUtamaHidden" value="<?= formValue($editData, 'icd_utama') ?>">
                 </div>
@@ -391,7 +395,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <div class="row">
                 <div class="col-md-12 mb-3">
                     <label class="form-label">Diagnosa Sekunder & Kode ICD</label>
-                    <div id="diagnosaSekunderContainer"></div>
+                    <div class="d-flex gap-2 mb-2">
+                        <input type="text" class="form-control border-0 border-bottom rounded-0 px-1 bg-transparent" readonly placeholder="Klik search di kanan untuk tambah diagnosa sekunder ➡️">
+                        <button type="button" class="btn btn-primary btn-search rounded-circle shadow-sm" style="width: 38px; height: 38px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="openSearchModal('sekunder')">🔍</button>
+                    </div>
+                    <div id="diagnosaSekunderList"></div>
                     <input type="hidden" name="diagnosa_sekunder_1" id="diagnosaSekunderHidden" value="<?= formValue($editData, 'diagnosa_sekunder_1') ?>">
                     <input type="hidden" name="icd_sekunder_1" id="icdSekerunderHidden" value="<?= formValue($editData, 'icd_sekunder_1') ?>">
                 </div>
@@ -401,7 +409,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <div class="row">
                 <div class="col-md-12 mb-3">
                     <label class="form-label">Prosedur / Operasi & Kode ICD (ICD-9-CM / ICD-10-PCS)</label>
-                    <div id="prosedurContainer"></div>
+                    <div class="d-flex gap-2 mb-2">
+                        <input type="text" class="form-control border-0 border-bottom rounded-0 px-1 bg-transparent" readonly placeholder="Klik search di kanan untuk tambah prosedur ➡️">
+                        <button type="button" class="btn btn-success btn-search rounded-circle shadow-sm" style="width: 38px; height: 38px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="openSearchModal('prosedur')">🔍</button>
+                    </div>
+                    <div id="prosedurList"></div>
                     <input type="hidden" name="prosedur_operasi" id="prosedurHidden" value="<?= formValue($editData, 'prosedur_operasi') ?>">
                     <input type="hidden" name="icd_prosedur_1" id="icdProsedurHidden" value="<?= formValue($editData, 'icd_prosedur_1') ?>">
                     <input type="hidden" name="icd_prosedur_2" value="<?= formValue($editData, 'icd_prosedur_2') ?>">
@@ -615,44 +627,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     updateRegistrasiFields();
     updateDpjpUtamaPreview();
 
-    let currentSearchRow = null;
     let currentSearchType = ''; 
 
-    function createIcdRow(containerId, type, code = '', name = '') {
-        const container = document.getElementById(containerId);
+    function createFilledRow(listId, type, code, name) {
+        const list = document.getElementById(listId);
         const row = document.createElement('div');
-        row.className = 'd-flex gap-2 mb-2 icd-row';
-        row.dataset.type = type;
+        row.className = 'd-flex gap-2 mb-2 icd-filled-row';
         
-        const displayValue = code ? (code + ' - ' + name) : '';
-        let btnClass = 'btn-secondary';
-        if (type === 'utama') btnClass = 'btn-danger';
-        if (type === 'sekunder') btnClass = 'btn-primary';
-        if (type === 'prosedur') btnClass = 'btn-success';
+        const displayValue = code ? (code + ' - ' + name) : name;
         
         row.innerHTML = `
-            <input type="text" class="form-control icd-display border-0 border-bottom rounded-0 px-1" value="${escapeHtml(displayValue)}" readonly style="cursor: pointer; background-color: transparent; box-shadow: none;" placeholder="Klik tombol search bulat di kanan ➡️">
+            <input type="text" class="form-control icd-display border-0 border-bottom rounded-0 px-1 text-primary fw-bold" value="${escapeHtml(displayValue)}" readonly style="cursor: pointer; background-color: transparent; box-shadow: none;" title="Klik untuk menampilkan tombol Hapus">
             <input type="hidden" class="icd-code" value="${escapeHtml(code)}">
             <input type="hidden" class="icd-name" value="${escapeHtml(name)}">
-            <button type="button" class="btn ${btnClass} btn-search rounded-circle shadow-sm" style="width: 38px; height: 38px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="openSearchModal(this, '${type}')">🔍</button>
-            <button type="button" class="btn btn-outline-danger btn-delete d-none rounded-pill" onclick="deleteIcdRow(this)">Hapus</button>
+            <button type="button" class="btn btn-outline-danger btn-delete d-none rounded-pill shadow-sm" style="font-size: 0.85rem;" onclick="deleteFilledRow(this, '${type}')">Hapus</button>
         `;
         
         const displayInput = row.querySelector('.icd-display');
         displayInput.addEventListener('click', function() {
-            if (this.value.trim() !== '') {
-                const btnSearch = row.querySelector('.btn-search');
-                const btnDelete = row.querySelector('.btn-delete');
-                btnSearch.classList.toggle('d-none');
-                btnDelete.classList.toggle('d-none');
-            }
+            const btnDelete = row.querySelector('.btn-delete');
+            btnDelete.classList.toggle('d-none');
         });
         
-        container.appendChild(row);
+        list.appendChild(row);
     }
 
-    window.openSearchModal = function(btn, type) {
-        currentSearchRow = btn.closest('.icd-row');
+    window.openSearchModal = function(type) {
         currentSearchType = type;
         
         const title = type === 'prosedur' ? 'Cari Kode Prosedur / Operasi' : 'Cari Kode ICD / Penyakit';
@@ -664,44 +664,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         modal.show();
     };
 
-    window.deleteIcdRow = function(btn) {
-        const row = btn.closest('.icd-row');
-        const container = row.parentElement;
-        const type = row.dataset.type;
+    window.deleteFilledRow = function(btn, type) {
+        const row = btn.closest('.icd-filled-row');
         row.remove();
         updateHiddenInputs(type);
-        ensureEmptyRow(container.id, type);
     };
 
-    function ensureEmptyRow(containerId, type) {
-        const container = document.getElementById(containerId);
-        const emptyRows = Array.from(container.querySelectorAll('.icd-code')).filter(inp => inp.value === '');
-        if (emptyRows.length === 0) {
-            createIcdRow(containerId, type);
-        }
-    }
-
     function updateHiddenInputs(type) {
-        let containerId, diagHiddenId, icdHiddenId;
+        let listId, diagHiddenId, icdHiddenId;
         if (type === 'utama') {
-            containerId = 'diagnosaUtamaContainer';
+            listId = 'diagnosaUtamaList';
             diagHiddenId = 'diagnosaUtamaHidden';
             icdHiddenId = 'icdUtamaHidden';
         } else if (type === 'sekunder') {
-            containerId = 'diagnosaSekunderContainer';
+            listId = 'diagnosaSekunderList';
             diagHiddenId = 'diagnosaSekunderHidden';
             icdHiddenId = 'icdSekerunderHidden';
         } else if (type === 'prosedur') {
-            containerId = 'prosedurContainer';
+            listId = 'prosedurList';
             diagHiddenId = 'prosedurHidden';
             icdHiddenId = 'icdProsedurHidden';
         }
         
-        const container = document.getElementById(containerId);
+        const list = document.getElementById(listId);
         const codes = [];
         const names = [];
         
-        container.querySelectorAll('.icd-row').forEach(row => {
+        list.querySelectorAll('.icd-filled-row').forEach(row => {
             const code = row.querySelector('.icd-code').value.trim();
             const name = row.querySelector('.icd-name').value.trim();
             if (code || name) {
@@ -714,7 +703,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         document.getElementById(icdHiddenId).value = codes.join(' ; ');
     }
 
-    function loadRows(hiddenDiagId, hiddenIcdId, containerId, type) {
+    function loadRows(hiddenDiagId, hiddenIcdId, listId, type) {
         const diagStr = document.getElementById(hiddenDiagId).value;
         const icdStr = document.getElementById(hiddenIcdId).value;
         
@@ -723,17 +712,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             const icdArray = icdStr ? icdStr.split(' ; ') : [];
             for (let i = 0; i < diagArray.length; i++) {
                 if (diagArray[i].trim() !== '') {
-                    createIcdRow(containerId, type, icdArray[i] ? icdArray[i].trim() : '', diagArray[i].trim());
+                    createFilledRow(listId, type, icdArray[i] ? icdArray[i].trim() : '', diagArray[i].trim());
                 }
             }
         }
-        ensureEmptyRow(containerId, type);
     }
 
     $(document).ready(function() {
-        loadRows('diagnosaUtamaHidden', 'icdUtamaHidden', 'diagnosaUtamaContainer', 'utama');
-        loadRows('diagnosaSekunderHidden', 'icdSekerunderHidden', 'diagnosaSekunderContainer', 'sekunder');
-        loadRows('prosedurHidden', 'icdProsedurHidden', 'prosedurContainer', 'prosedur');
+        loadRows('diagnosaUtamaHidden', 'icdUtamaHidden', 'diagnosaUtamaList', 'utama');
+        loadRows('diagnosaSekunderHidden', 'icdSekerunderHidden', 'diagnosaSekunderList', 'sekunder');
+        loadRows('prosedurHidden', 'icdProsedurHidden', 'prosedurList', 'prosedur');
 
         $('#modalIcdSelect').select2({
             theme: 'bootstrap-5',
@@ -773,20 +761,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         $('#modalIcdSelect').on('select2:select', function (e) {
             const data = e.params.data;
-            if (currentSearchRow) {
-                currentSearchRow.querySelector('.icd-code').value = data.code || '';
-                currentSearchRow.querySelector('.icd-name').value = data.name || data.text;
-                currentSearchRow.querySelector('.icd-display').value = (data.code || '') + ' - ' + (data.name || data.text);
-                
-                const type = currentSearchRow.dataset.type;
-                const container = currentSearchRow.parentElement;
-                
-                currentSearchRow.querySelector('.btn-delete').classList.add('d-none');
-                currentSearchRow.querySelector('.btn-search').classList.remove('d-none');
-                
-                updateHiddenInputs(type);
-                ensureEmptyRow(container.id, type);
-            }
+            
+            let listId = '';
+            if (currentSearchType === 'utama') listId = 'diagnosaUtamaList';
+            if (currentSearchType === 'sekunder') listId = 'diagnosaSekunderList';
+            if (currentSearchType === 'prosedur') listId = 'prosedurList';
+
+            createFilledRow(listId, currentSearchType, data.code || '', data.name || data.text);
+            updateHiddenInputs(currentSearchType);
+            
             $('#modalSearchIcd').modal('hide');
         });
     });
