@@ -12,13 +12,18 @@ $message = '';
 $error = '';
 
 // Generate Nomor RM Otomatis (Format Terminal Digit Filing: XX-XX-XX)
-$queryRm = mysqli_query($koneksi, "SELECT id FROM tabel_registrasi ORDER BY id DESC LIMIT 1");
-$lastId = 0;
-if ($queryRm && mysqli_num_rows($queryRm) > 0) {
-    $rowRm = mysqli_fetch_assoc($queryRm);
-    $lastId = (int)$rowRm['id'];
+$queryRm = mysqli_query($koneksi, "SELECT nomor_rm FROM tabel_registrasi");
+$maxRmInt = 0;
+if ($queryRm) {
+    while ($rowRm = mysqli_fetch_assoc($queryRm)) {
+        // Hapus tanda strip dan ubah ke integer
+        $rmInt = (int) str_replace('-', '', $rowRm['nomor_rm']);
+        if ($rmInt > $maxRmInt) {
+            $maxRmInt = $rmInt;
+        }
+    }
 }
-$nextId = $lastId + 1;
+$nextId = $maxRmInt + 1;
 $strId = str_pad($nextId, 6, "0", STR_PAD_LEFT);
 $autoRm = substr($strId, 0, 2) . '-' . substr($strId, 2, 2) . '-' . substr($strId, 4, 2);
 
