@@ -188,6 +188,39 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     if (mysqli_query($koneksi, $query)) {
+        $saved_resume_id = $edit_id > 0 ? $edit_id : mysqli_insert_id($koneksi);
+
+        // --- SIMPAN KE TABEL RELASI ICD (tabel_resume_icd) ---
+        mysqli_query($koneksi, "DELETE FROM tabel_resume_icd WHERE resume_id = $saved_resume_id");
+
+        $icdRelations = [];
+        $parseIcd = function($diagStr, $icdStr, $type) use (&$icdRelations) {
+            if (!$diagStr) return;
+            $diags = explode(' ; ', $diagStr);
+            $icds = $icdStr ? explode(' ; ', $icdStr) : [];
+            for ($i = 0; $i < count($diags); $i++) {
+                if (trim($diags[$i]) !== '') {
+                    $icdRelations[] = [
+                        'tipe' => $type,
+                        'icd_code' => isset($icds[$i]) ? trim($icds[$i]) : '',
+                        'icd_name' => trim($diags[$i])
+                    ];
+                }
+            }
+        };
+
+        $parseIcd($diagnosa_utama, $icd_utama, 'utama');
+        $parseIcd($diagnosa_sekunder_1, $icd_sekunder_1, 'sekunder');
+        $parseIcd($prosedur_operasi, $icd_prosedur_1, 'prosedur');
+
+        foreach ($icdRelations as $rel) {
+            $t = mysqli_real_escape_string($koneksi, $rel['tipe']);
+            $c = mysqli_real_escape_string($koneksi, $rel['icd_code']);
+            $n = mysqli_real_escape_string($koneksi, $rel['icd_name']);
+            mysqli_query($koneksi, "INSERT INTO tabel_resume_icd (resume_id, tipe, icd_code, icd_name) VALUES ($saved_resume_id, '$t', '$c', '$n')");
+        }
+        // ----------------------------------------------------
+
         $successMessage = $edit_id > 0 ? 'Data Resume Medis berhasil diperbarui!' : 'Seluruh data Resume Medis berhasil disimpan!';
         echo "<script>
                 alert('$successMessage');

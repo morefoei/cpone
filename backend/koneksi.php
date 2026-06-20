@@ -13,3 +13,13 @@ if (!$koneksi) {
 }
 
 mysqli_set_charset($koneksi, 'utf8mb4');
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+$current_page = basename($_SERVER['PHP_SELF']);
+if (!isset($_SESSION['user_id']) && $current_page !== 'login.php') {
+    header("Location: /login.php");
+    exit;
+}
