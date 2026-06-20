@@ -29,14 +29,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($_FILES['tanda_tangan']['error'] !== UPLOAD_ERR_OK) {
             $error = 'Upload tanda tangan gagal.';
         } else {
+            // === BAGIAN PERBAIKAN: MEMBUAT FOLDER OTOMATIS ===
+            // Pastikan kita membuat jalur/path yang benar dari root server
+            $targetDir = dirname(__DIR__) . '/assets/img/signatures/';
+            
+            // Cek apakah foldernya sudah ada. Jika belum, buatkan.
+            if (!file_exists($targetDir)) {
+                // mkdir dengan parameter 'true' agar membuat folder secara beruntun (assets -> img -> signatures)
+                mkdir($targetDir, 0755, true); 
+            }
+            
             $filename = 'ttd_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+            // Jalur relatif yang disimpan ke database (untuk dipanggil di tag <img>)
             $relativePath = 'assets/img/signatures/' . $filename;
-            $targetPath = dirname(__DIR__) . '/' . $relativePath;
+            // Jalur absolut tempat file dipindahkan di dalam server
+            $targetPath = $targetDir . $filename;
 
+            // Proses pemindahan (upload) file
             if (move_uploaded_file($_FILES['tanda_tangan']['tmp_name'], $targetPath)) {
                 $tanda_tangan = mysqli_real_escape_string($koneksi, $relativePath);
             } else {
-                $error = 'Gagal menyimpan file tanda tangan.';
+                $error = 'Gagal menyimpan file tanda tangan ke dalam folder server.';
             }
         }
     }
@@ -150,7 +163,7 @@ $dokterList = getDokterList($koneksi);
                                 </td>
                                 <td>
                                     <?php if (!empty($dokter['tanda_tangan'])): ?>
-                                        <img src="../<?= htmlspecialchars($dokter['tanda_tangan']) ?>" alt="Tanda tangan" class="signature-preview">
+                                        <img src="/<?= htmlspecialchars($dokter['tanda_tangan']) ?>" alt="Tanda tangan" class="signature-preview">
                                     <?php else: ?>
                                         <span class="text-muted">Belum ada</span>
                                     <?php endif; ?>

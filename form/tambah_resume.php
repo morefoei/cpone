@@ -8,6 +8,16 @@ include dirname(__DIR__) . '/backend/koneksi.php';
 include __DIR__ . '/dokter_helpers.php';
 
 $dokterList = getDokterList($koneksi);
+$dokterPreviewList = [];
+
+foreach ($dokterList as $dokter) {
+    $dokterPreviewList[(int) $dokter['id']] = [
+        'nama_dokter' => $dokter['nama_dokter'] ?? '',
+        'label' => dokterLabel($dokter),
+        'tanda_tangan' => $dokter['tanda_tangan'] ?? '',
+        'barcode' => code128BSvg(dokterLabel($dokter), 58, 1),
+    ];
+}
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Escape semua input untuk keamanan
@@ -20,6 +30,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $lama_dirawat = mysqli_real_escape_string($koneksi, $_POST['lama_dirawat']);
     $ruang_rawat = mysqli_real_escape_string($koneksi, $_POST['ruang_rawat']);
     $dpjp_utama = mysqli_real_escape_string($koneksi, $_POST['dpjp_utama']);
+    $dpjp_utama_dokter_id = (int) ($_POST['dpjp_utama_dokter_id'] ?? 0);
     $rawat_bersama = mysqli_real_escape_string($koneksi, $_POST['rawat_bersama']);
     $dpjp_lain_1 = mysqli_real_escape_string($koneksi, $_POST['dpjp_lain_1']);
     $dpjp_lain_2 = mysqli_real_escape_string($koneksi, $_POST['dpjp_lain_2']);
@@ -46,6 +57,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $nama_dpjp_pulang = mysqli_real_escape_string($koneksi, $_POST['nama_dpjp_pulang']);
     $dpjp_pulang_dokter_id = (int) ($_POST['dpjp_pulang_dokter_id'] ?? 0);
 
+    if ($dpjp_utama_dokter_id > 0) {
+        $dokterUtama = getDokterById($koneksi, $dpjp_utama_dokter_id);
+        if ($dokterUtama) {
+            $dpjp_utama = mysqli_real_escape_string($koneksi, $dokterUtama['nama_dokter']);
+        } else {
+            $dpjp_utama_dokter_id = 0;
+        }
+    }
+
     if ($dpjp_pulang_dokter_id > 0) {
         $dokterPulang = getDokterById($koneksi, $dpjp_pulang_dokter_id);
         if ($dokterPulang) {
@@ -56,13 +76,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Query super panjang untuk memasukkan semua data
     $query = "INSERT INTO tabel_resume_medis (
         nomor_rm, nama_pasien, tanggal_lahir, jenis_kelamin, tgl_masuk, tgl_keluar, lama_dirawat, ruang_rawat,
-        dpjp_utama, rawat_bersama, dpjp_lain_1, dpjp_lain_2, dpjp_lain_3, diagnosa_masuk, riwayat_penyakit,
+        dpjp_utama, dpjp_utama_dokter_id, rawat_bersama, dpjp_lain_1, dpjp_lain_2, dpjp_lain_3, diagnosa_masuk, riwayat_penyakit,
         td, n, s, p, sat_o2, laboratorium, penunjang_lain, diagnosa_utama, icd_utama,
         diagnosa_sekunder_1, icd_sekunder_1, prosedur_operasi, icd_prosedur_1, icd_prosedur_2,
         pengobatan, kondisi_pulang, instruksi_pulang, nama_dpjp_pulang, dpjp_pulang_dokter_id
     ) VALUES (
         '$nomor_rm', '$nama_pasien', '$tanggal_lahir', '$jenis_kelamin', '$tgl_masuk', '$tgl_keluar', '$lama_dirawat', '$ruang_rawat',
-        '$dpjp_utama', '$rawat_bersama', '$dpjp_lain_1', '$dpjp_lain_2', '$dpjp_lain_3', '$diagnosa_masuk', '$riwayat_penyakit',
+        '$dpjp_utama', " . ($dpjp_utama_dokter_id > 0 ? $dpjp_utama_dokter_id : "NULL") . ", '$rawat_bersama', '$dpjp_lain_1', '$dpjp_lain_2', '$dpjp_lain_3', '$diagnosa_masuk', '$riwayat_penyakit',
         '$td', '$n', '$s', '$p', '$sat_o2', '$laboratorium', '$penunjang_lain', '$diagnosa_utama', '$icd_utama',
         '$diagnosa_sekunder_1', '$icd_sekunder_1', '$prosedur_operasi', '$icd_prosedur_1', '$icd_prosedur_2',
         '$pengobatan', '$kondisi_pulang', '$instruksi_pulang', '$nama_dpjp_pulang', " . ($dpjp_pulang_dokter_id > 0 ? $dpjp_pulang_dokter_id : "NULL") . "
@@ -91,6 +111,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         body { background-color: #f0f2f5; }
         .form-container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-width: 900px; margin: auto; }
         .section-title { border-bottom: 2px solid #0d6efd; padding-bottom: 5px; margin-bottom: 20px; margin-top: 30px; font-weight: bold; color: #0d6efd; }
+        .doctor-preview { border: 1px solid #dee2e6; border-radius: 8px; padding: 12px; min-height: 128px; background: #f8f9fa; }
+        .doctor-preview img { width: 170px; height: 62px; object-fit: contain; display: block; margin-bottom: 10px; background: #fff; border: 1px solid #e9ecef; }
+        .doctor-preview .barcode { max-width: 190px; height: 58px; background: #fff; }
     </style>
 </head>
 <body>
@@ -145,7 +168,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label class="form-label">DPJP Utama</label>
-                    <input type="text" name="dpjp_utama" class="form-control" required>
+                    <input type="text" id="dpjpUtamaSearch" class="form-control mb-2" placeholder="Cari nama / nomor / spesialis dokter">
+                    <select name="dpjp_utama_dokter_id" id="dpjpUtamaSelect" class="form-select" required>
+                        <option value="">-- Pilih Dokter --</option>
+                        <?php foreach ($dokterList as $dokter): ?>
+                            <option value="<?= (int) $dokter['id'] ?>" data-search="<?= htmlspecialchars(strtolower(dokterLabel($dokter)), ENT_QUOTES, 'UTF-8') ?>">
+                                <?= htmlspecialchars(dokterLabel($dokter)) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <input type="hidden" name="dpjp_utama" id="dpjpUtamaName">
+                    <small class="text-muted">Pilihan ini dipakai untuk tanda tangan dan barcode di cetak resume.</small>
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Rawat Bersama?</label>
@@ -154,6 +187,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <option value="Ya">Ya</option>
                     </select>
                 </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Preview Tanda Tangan & Barcode DPJP Utama</label>
+                    <div class="doctor-preview" id="dpjpUtamaPreview">
+                        <span class="text-muted">Pilih DPJP Utama dari master dokter.</span>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3"></div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label">DPJP Lainnya 1 (Opsional)</label>
                     <input type="text" name="dpjp_lain_1" class="form-control">
@@ -286,5 +326,61 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const dokterData = <?= json_encode($dokterPreviewList, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+    const dpjpUtamaSearch = document.getElementById('dpjpUtamaSearch');
+    const dpjpUtamaSelect = document.getElementById('dpjpUtamaSelect');
+    const dpjpUtamaName = document.getElementById('dpjpUtamaName');
+    const dpjpUtamaPreview = document.getElementById('dpjpUtamaPreview');
+
+    function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, function (char) {
+            return {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }[char];
+        });
+    }
+
+    function updateDpjpUtamaPreview() {
+        const selectedId = dpjpUtamaSelect.value;
+        const dokter = dokterData[selectedId];
+
+        if (!dokter) {
+            dpjpUtamaName.value = '';
+            dpjpUtamaPreview.innerHTML = '<span class="text-muted">Pilih DPJP Utama dari master dokter.</span>';
+            return;
+        }
+
+        dpjpUtamaName.value = dokter.nama_dokter;
+        const namaDokter = escapeHtml(dokter.nama_dokter);
+        const labelDokter = escapeHtml(dokter.label);
+        const tandaTangan = encodeURI(dokter.tanda_tangan);
+        const signatureHtml = dokter.tanda_tangan
+            ? '<img src="../' + tandaTangan + '" alt="Tanda tangan ' + namaDokter + '">'
+            : '<div class="text-muted mb-2">Tanda tangan belum ada di master dokter.</div>';
+
+        dpjpUtamaPreview.innerHTML = signatureHtml + '<div>' + dokter.barcode + '</div><small class="text-muted">' + labelDokter + '</small>';
+    }
+
+    dpjpUtamaSearch.addEventListener('input', function () {
+        const keyword = this.value.trim().toLowerCase();
+
+        Array.from(dpjpUtamaSelect.options).forEach(function (option) {
+            if (option.value === '') {
+                option.hidden = false;
+                return;
+            }
+
+            option.hidden = keyword !== '' && !option.dataset.search.includes(keyword);
+        });
+    });
+
+    dpjpUtamaSelect.addEventListener('change', updateDpjpUtamaPreview);
+    updateDpjpUtamaPreview();
+</script>
 </body>
 </html>

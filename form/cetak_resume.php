@@ -15,11 +15,13 @@ if (!$data) {
     die("Data tidak ditemukan");
 }
 
+$dokterUtama = getDokterById($koneksi, $data['dpjp_utama_dokter_id'] ?? 0);
 $dokterPulang = getDokterById($koneksi, $data['dpjp_pulang_dokter_id'] ?? 0);
-$namaDpjpPulang = $dokterPulang['nama_dokter'] ?? ($data['nama_dpjp_pulang'] ?: 'Nama DPJP');
-$barcodeDokter = $dokterPulang
-    ? dokterLabel($dokterPulang)
-    : ($data['nama_dpjp_pulang'] ?: 'Nama DPJP');
+$dokterTtd = $dokterUtama ?: $dokterPulang;
+$namaDokterTtd = $dokterTtd['nama_dokter'] ?? ($data['dpjp_utama'] ?: ($data['nama_dpjp_pulang'] ?: 'Nama DPJP'));
+$barcodeDokter = $dokterTtd
+    ? dokterLabel($dokterTtd)
+    : ($data['dpjp_utama'] ?: ($data['nama_dpjp_pulang'] ?: 'Nama DPJP'));
 
 // Fungsi kecil untuk mengecek checkbox
 function isChecked($db_value, $target_value) {
@@ -254,15 +256,15 @@ function multiline($value) {
         <div class="date-line">..........................,..........................</div>
         <div class="signature-box">
             <div>Tanda Tangan</div>
-            <?php if ($dokterPulang && !empty($dokterPulang['tanda_tangan'])): ?>
-                <img src="../<?= h($dokterPulang['tanda_tangan']) ?>" alt="Tanda tangan <?= h($namaDpjpPulang) ?>" class="signature-image">
+            <?php if ($dokterTtd && !empty($dokterTtd['tanda_tangan'])): ?>
+                <img src="../<?= h($dokterTtd['tanda_tangan']) ?>" alt="Tanda tangan <?= h($namaDokterTtd) ?>" class="signature-image">
             <?php else: ?>
                 <div class="signature-placeholder"></div>
             <?php endif; ?>
             <div class="barcode-wrap"><?= code128BSvg($barcodeDokter, 58, 1) ?></div>
-            <div>(<?= h($namaDpjpPulang) ?>)</div>
-            <?php if ($dokterPulang): ?>
-                <div class="doctor-meta"><?= h($dokterPulang['nomor_dokter']) ?> | <?= h($dokterPulang['jenis_dokter']) ?><?= !empty($dokterPulang['spesialis']) ? ' - ' . h($dokterPulang['spesialis']) : '' ?></div>
+            <div>(<?= h($namaDokterTtd) ?>)</div>
+            <?php if ($dokterTtd): ?>
+                <div class="doctor-meta"><?= h($dokterTtd['nomor_dokter']) ?> | <?= h($dokterTtd['jenis_dokter']) ?><?= !empty($dokterTtd['spesialis']) ? ' - ' . h($dokterTtd['spesialis']) : '' ?></div>
             <?php endif; ?>
         </div>
     </div>

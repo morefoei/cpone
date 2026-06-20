@@ -15,6 +15,11 @@ function ensureDokterSchema($koneksi) {
     if ($columnCheck && mysqli_num_rows($columnCheck) == 0) {
         mysqli_query($koneksi, "ALTER TABLE tabel_resume_medis ADD COLUMN dpjp_pulang_dokter_id INT NULL AFTER nama_dpjp_pulang");
     }
+
+    $columnCheck = mysqli_query($koneksi, "SHOW COLUMNS FROM tabel_resume_medis LIKE 'dpjp_utama_dokter_id'");
+    if ($columnCheck && mysqli_num_rows($columnCheck) == 0) {
+        mysqli_query($koneksi, "ALTER TABLE tabel_resume_medis ADD COLUMN dpjp_utama_dokter_id INT NULL AFTER dpjp_utama");
+    }
 }
 
 function getDokterList($koneksi) {
