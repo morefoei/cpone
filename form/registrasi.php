@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (mysqli_query($koneksi, $query)) {
             echo "<script>
                     alert('Data registrasi berhasil disimpan!');
-                    window.location.href = 'eresume.php';
+                    window.location.href = '/form/eresume';
                   </script>";
             exit;
         }
@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <h3 class="mb-1">Registrasi Pasien</h3>
                 <p class="text-muted mb-0">Input data awal pasien sebelum dibuatkan e-resume.</p>
             </div>
-            <a href="eresume.php" class="btn btn-secondary">Kembali</a>
+            <a href="/form/eresume" class="btn btn-secondary">Kembali</a>
         </div>
 
         <?php if ($error !== ''): ?>
@@ -123,7 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <div class="d-flex justify-content-end gap-2">
-                <a href="eresume.php" class="btn btn-outline-secondary px-4">Batal</a>
+                <a href="/form/eresume" class="btn btn-outline-secondary px-4">Batal</a>
                 <button type="submit" class="btn btn-primary px-4">Simpan Registrasi</button>
             </div>
         </form>

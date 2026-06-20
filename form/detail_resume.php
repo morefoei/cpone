@@ -38,8 +38,8 @@ $data = mysqli_fetch_assoc($result);
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h3 class="mb-0">Detail Resume Medis</h3>
             <div>
-                <a href="eresume.php" class="btn btn-secondary me-2">Kembali</a>
-                <a href="cetak_resume.php?id=<?= $data['id'] ?>" target="_blank" class="btn btn-danger">
+                <a href="/form/eresume" class="btn btn-secondary me-2">Kembali</a>
+                <a href="/form/cetak_resume?id=<?= $data['id'] ?>" target="_blank" class="btn btn-danger">
                     🖨️ Cetak Form (PDF)
                 </a>
             </div>

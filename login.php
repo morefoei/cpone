@@ -48,6 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body class="d-flex align-items-center justify-content-center" style="height: 100vh;">
     <div class="card login-card" style="width: 100%; max-width: 420px;">
         <div class="login-header">
+            <img src="/assets/img/logo-ueu-unggul.png" alt="Logo Esa Unggul" class="img-fluid mb-3 bg-white rounded p-2" style="max-height: 80px;">
             <h3 class="fw-bold mb-1">E-Resume Medis</h3>
             <p class="mb-0 text-white-50">Silakan login untuk melanjutkan</p>
         </div>

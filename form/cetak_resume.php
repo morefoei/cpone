@@ -111,7 +111,7 @@ function multiline($value) {
 <body>
 
 <button class="btn-action btn-print no-print" onclick="window.print()">🖨️ Cetak / Simpan PDF</button>
-<a href="detail_resume.php?id=<?= urlencode($id) ?>" class="btn-action btn-back no-print">← Kembali</a>
+<a href="/form/detail_resume?id=<?= urlencode($id) ?>" class="btn-action btn-back no-print">← Kembali</a>
 
 <div class="page">
     <div class="doc-code">RI 02/2020/I</div>

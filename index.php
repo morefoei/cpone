@@ -1,3 +1,4 @@
+<?php require_once __DIR__ . '/backend/koneksi.php'; ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -13,6 +14,7 @@
 
 <div class="container mt-5">
     <div class="p-5 text-center bg-white rounded shadow-sm">
+        <img src="/assets/img/logo-ueu-unggul.png" alt="Logo Esa Unggul" class="img-fluid mb-4" style="max-height: 120px;">
         <h1 class="text-primary">Selamat Datang di Sistem E-Resume</h1>
         <p class="lead mt-3">Sistem Informasi Rekam Medis Elektronik Terintegrasi - Capstone RMIK Universitas Esa Unggul.</p>
         <hr class="my-4">

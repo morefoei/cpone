@@ -72,19 +72,19 @@ if (!$registrasiResult || !$result) {
             </div>
             
             <div>
-                <a href="../index.php" class="btn btn-outline-dark shadow-sm me-2">
+                <a href="/" class="btn btn-outline-dark shadow-sm me-2">
                     Kembali ke Index
                 </a>
-                <a href="registrasi.php" class="btn btn-outline-primary shadow-sm me-2">
+                <a href="/form/registrasi" class="btn btn-outline-primary shadow-sm me-2">
                     Registrasi
                 </a>
-                <a href="dokter.php" class="btn btn-outline-secondary shadow-sm me-2">
+                <a href="/form/dokter" class="btn btn-outline-secondary shadow-sm me-2">
                     Master Dokter
                 </a>
-                <a href="tambah_resume.php" class="btn btn-primary shadow-sm me-2">
+                <a href="/form/tambah_resume" class="btn btn-primary shadow-sm me-2">
                     Buat E-Resume
                 </a>
-                <a href="export-excel.php" class="btn btn-success shadow-sm">
+                <a href="/form/export-excel" class="btn btn-success shadow-sm">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-excel me-1" viewBox="0 0 16 16">
                       <path d="M5.884 6.68a.5.5 0 1 0-.768.64L7.349 10l-2.233 2.68a.5.5 0 0 0 .768.64L8 10.781l2.116 2.539a.5.5 0 0 0 .768-.641L8.651 10l2.233-2.68a.5.5 0 0 0-.768-.64L8 9.219l-2.116-2.54z"/>
                       <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
@@ -132,9 +132,9 @@ if (!$registrasiResult || !$result) {
                                 </td>
                                 <td>
                                     <?php if (!empty($row['resume_id'])): ?>
-                                        <a href="detail_resume.php?id=<?= (int) $row['resume_id'] ?>" class="btn btn-sm btn-outline-primary">Lihat E-Resume</a>
+                                        <a href="/form/detail_resume?id=<?= (int) $row['resume_id'] ?>" class="btn btn-sm btn-outline-primary">Lihat E-Resume</a>
                                     <?php else: ?>
-                                        <a href="tambah_resume.php?registrasi_id=<?= (int) $row['id'] ?>" class="btn btn-sm btn-primary">Buat E-Resume</a>
+                                        <a href="/form/tambah_resume?registrasi_id=<?= (int) $row['id'] ?>" class="btn btn-sm btn-primary">Buat E-Resume</a>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -180,8 +180,8 @@ if (!$registrasiResult || !$result) {
                                 <td><?= htmlspecialchars($row['dpjp_utama'] ?? '-') ?></td>
                                 <td><?= htmlspecialchars($row['kondisi_pulang'] ?? '-') ?></td>
                                 <td>
-                                    <a href="detail_resume.php?id=<?= (int) $row['id'] ?>" class="btn btn-sm btn-outline-primary">Lihat Detail</a>
-                                    <a href="tambah_resume.php?id=<?= (int) $row['id'] ?>" class="btn btn-sm btn-outline-warning ms-1">Edit</a>
+                                    <a href="/form/detail_resume?id=<?= (int) $row['id'] ?>" class="btn btn-sm btn-outline-primary">Lihat Detail</a>
+                                    <a href="/form/tambah_resume?id=<?= (int) $row['id'] ?>" class="btn btn-sm btn-outline-warning ms-1">Edit</a>
                                 </td>
                             </tr>
                             <?php

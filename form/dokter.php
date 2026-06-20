@@ -118,7 +118,7 @@ $dokterList = getDokterList($koneksi);
             <h3 class="mb-1">Master Dokter</h3>
             <p class="text-muted mb-0">Daftar dokter untuk DPJP dan tanda tangan barcode.</p>
         </div>
-        <a href="eresume.php" class="btn btn-secondary">Kembali</a>
+        <a href="/form/eresume" class="btn btn-secondary">Kembali</a>
     </div>
 
     <?php if ($message !== ''): ?>
@@ -132,7 +132,7 @@ $dokterList = getDokterList($koneksi);
     <div class="panel mb-4">
         <h5 class="mb-3"><?= $editData ? 'Edit Dokter' : 'Tambah Dokter' ?></h5>
         <?php if ($editData): ?>
-            <a href="dokter.php" class="btn btn-sm btn-outline-secondary mb-3">Batal Edit</a>
+            <a href="/form/dokter" class="btn btn-sm btn-outline-secondary mb-3">Batal Edit</a>
         <?php endif; ?>
         <form method="POST" enctype="multipart/form-data" action="dokter.php">
             <?php if ($editData): ?>
@@ -204,8 +204,8 @@ $dokterList = getDokterList($koneksi);
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <a href="dokter.php?action=edit&id=<?= $dokter['id'] ?>" class="btn btn-sm btn-outline-primary">Edit</a>
-                                    <a href="dokter.php?action=delete&id=<?= $dokter['id'] ?>" class="btn btn-sm btn-outline-danger ms-1" onclick="return confirm('Apakah Anda yakin ingin menghapus dokter ini?');">Hapus</a>
+                                    <a href="/form/dokter?action=edit&id=<?= $dokter['id'] ?>" class="btn btn-sm btn-outline-primary">Edit</a>
+                                    <a href="/form/dokter?action=delete&id=<?= $dokter['id'] ?>" class="btn btn-sm btn-outline-danger ms-1" onclick="return confirm('Apakah Anda yakin ingin menghapus dokter ini?');">Hapus</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
