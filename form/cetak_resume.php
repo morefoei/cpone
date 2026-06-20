@@ -19,9 +19,7 @@ $dokterUtama = getDokterById($koneksi, $data['dpjp_utama_dokter_id'] ?? 0);
 $dokterPulang = getDokterById($koneksi, $data['dpjp_pulang_dokter_id'] ?? 0);
 $dokterTtd = $dokterUtama ?: $dokterPulang;
 $namaDokterTtd = $dokterTtd['nama_dokter'] ?? ($data['dpjp_utama'] ?: ($data['nama_dpjp_pulang'] ?: 'Nama DPJP'));
-$barcodeDokter = $dokterTtd
-    ? dokterLabel($dokterTtd)
-    : ($data['dpjp_utama'] ?: ($data['nama_dpjp_pulang'] ?: 'Nama DPJP'));
+$barcodeDokter = dokterQrData($dokterTtd, $namaDokterTtd);
 
 // Fungsi kecil untuk mengecek checkbox
 function isChecked($db_value, $target_value) {

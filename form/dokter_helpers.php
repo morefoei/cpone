@@ -60,6 +60,21 @@ function dokterLabel($dokter) {
     return trim(($dokter['nama_dokter'] ?? '') . ' | ' . ($dokter['nomor_dokter'] ?? '') . ' | ' . $jenisLengkap, ' |');
 }
 
+function dokterQrData($dokter, $namaManual = '') {
+    if (!$dokter) {
+        $nama = $namaManual ? $namaManual : 'Tanda Tangan Elektronik';
+        return "Tanda Tangan Elektronik Sah\n---------------------------\nNama: $nama\n---------------------------\nSistem E-Resume Medis";
+    }
+
+    $nama = $dokter['nama_dokter'] ?? '-';
+    $nomor = $dokter['nomor_dokter'] ?? '-';
+    $jenis = $dokter['jenis_dokter'] ?? '';
+    $spesialis = trim($dokter['spesialis'] ?? '');
+    $jenisLengkap = $jenis === 'Spesialis' && $spesialis !== '' ? "$jenis - $spesialis" : $jenis;
+
+    return "Tanda Tangan Elektronik Sah\n---------------------------\nNama: $nama\nNomor: $nomor\nKeahlian: $jenisLengkap\n---------------------------\nSistem E-Resume Medis";
+}
+
 function code128BSvg($text, $height = 82, $module = 1.25) {
     $patterns = [
         '212222','222122','222221','121223','121322','131222','122213','122312','132212','221213',

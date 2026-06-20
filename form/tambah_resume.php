@@ -43,7 +43,7 @@ foreach ($dokterList as $dokter) {
         'nama_dokter' => $dokter['nama_dokter'] ?? '',
         'label' => dokterLabel($dokter),
         'tanda_tangan' => $dokter['tanda_tangan'] ?? '',
-        'barcode' => qrCodeImg(dokterLabel($dokter), 75),
+        'barcode' => qrCodeImg(dokterQrData($dokter), 75),
     ];
 }
 
