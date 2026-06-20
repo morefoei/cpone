@@ -158,7 +158,8 @@ if (!$registrasiResult || !$resultDraft || !$resultSelesai) {
                     </tr>
                 </thead>
                 <tbody>
-                    <?php while ($row = mysqli_fetch_assoc($registrasiResult)): ?>
+                    <?php if (mysqli_num_rows($registrasiResult) > 0): ?>
+                        <?php while ($row = mysqli_fetch_assoc($registrasiResult)): ?>
                             <?php
                             $tglLahir = !empty($row['tanggal_lahir']) ? date('d-M-Y', strtotime($row['tanggal_lahir'])) : '-';
                             $tglMasuk = !empty($row['tgl_masuk']) ? date('d-M-Y', strtotime($row['tgl_masuk'])) : '-';
