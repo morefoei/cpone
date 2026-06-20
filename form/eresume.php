@@ -159,6 +159,8 @@ if (!$registrasiResult || !$result) {
                                         <a href="/form/tambah_resume?registrasi_id=<?= (int) $row['id'] ?>" class="btn btn-sm btn-primary mb-1">Buat E-Resume</a>
                                     <?php endif; ?>
                                     
+                                    <a href="/form/registrasi?action=edit&id=<?= (int) $row['id'] ?>" class="btn btn-sm btn-outline-warning mb-1">Edit</a>
+
                                     <?php if ($isAdmin): ?>
                                         <a href="/form/eresume?action=delete_reg&id=<?= (int) $row['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Hapus Registrasi? Data E-Resume terkait juga akan ikut terhapus!');">Hapus</a>
                                     <?php endif; ?>
