@@ -21,6 +21,11 @@ $dokterTtd = $dokterUtama ?: $dokterPulang;
 $namaDokterTtd = $dokterTtd['nama_dokter'] ?? ($data['dpjp_utama'] ?: ($data['nama_dpjp_pulang'] ?: 'Nama DPJP'));
 $barcodeDokter = dokterQrData($dokterTtd, $namaDokterTtd);
 
+date_default_timezone_set('Asia/Jakarta');
+$bulanIndo = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+$tanggalCetak = date('d') . ' ' . $bulanIndo[(int)date('m')] . ' ' . date('Y');
+$jamCetak = date('H:i');
+
 // Fungsi kecil untuk mengecek checkbox
 function isChecked($db_value, $target_value) {
     return (strcasecmp(trim($db_value ?? ''), $target_value) == 0) ? 'checked' : '';
@@ -251,7 +256,7 @@ function multiline($value) {
     </table>
 
     <div class="signature-area">
-        <div class="date-line">..........................,..........................</div>
+        <div class="date-line text-end mb-2" style="text-align: right; font-size: 16px;">Dicetak pada: <?= $tanggalCetak ?> Pukul <?= $jamCetak ?> WIB</div>
         <div class="signature-box">
             <div>Tanda Tangan</div>
             <?php if ($dokterTtd && !empty($dokterTtd['tanda_tangan'])): ?>

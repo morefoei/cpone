@@ -533,23 +533,53 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         dpjpUtamaPreview.innerHTML = signatureHtml + '<div>' + dokter.barcode + '</div><small class="text-muted">' + labelDokter + '</small>';
     }
 
-    function updateLamaDirawat() {
-        const tglMasuk = new Date(tglMasukInput.value);
-        const tglKeluar = new Date(tglKeluarInput.value);
-        
-        if (tglMasukInput.value && tglKeluarInput.value && !isNaN(tglMasuk) && !isNaN(tglKeluar)) {
-            const timeDiff = tglKeluar.getTime() - tglMasuk.getTime();
-            const dayDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-            
-            // Set minimum to 1 day if dates are the same or valid, otherwise empty if invalid
-            lamaDirawatInput.value = dayDiff >= 0 ? (dayDiff === 0 ? 1 : dayDiff) : '';
-        } else {
-            lamaDirawatInput.value = '';
+    function parseDateCustom(dateStr) {
+        if (!dateStr) return null;
+        // Jika format YYYY-MM-DD
+        if (dateStr.includes('-')) {
+            const parts = dateStr.split('-');
+            if (parts[0].length === 4) {
+                return new Date(parts[0], parts[1] - 1, parts[2]);
+            }
         }
+        // Jika format DD/MM/YYYY (teks biasa dari browser atau DB)
+        if (dateStr.includes('/')) {
+            const parts = dateStr.split('/');
+            if (parts.length === 3) {
+                // Asumsi DD/MM/YYYY
+                return new Date(parts[2], parts[1] - 1, parts[0]);
+            }
+        }
+        return new Date(dateStr);
+    }
+
+    function updateLamaDirawat() {
+        const valMasuk = tglMasukInput.value;
+        const valKeluar = tglKeluarInput.value;
+        
+        if (valMasuk && valKeluar) {
+            const tglMasuk = parseDateCustom(valMasuk);
+            const tglKeluar = parseDateCustom(valKeluar);
+            
+            if (tglMasuk && tglKeluar && !isNaN(tglMasuk) && !isNaN(tglKeluar)) {
+                // Hilangkan pengaruh jam (set ke 00:00:00) agar perhitungan hari selalu bulat
+                tglMasuk.setHours(0, 0, 0, 0);
+                tglKeluar.setHours(0, 0, 0, 0);
+                
+                const timeDiff = tglKeluar.getTime() - tglMasuk.getTime();
+                const dayDiff = Math.round(timeDiff / (1000 * 3600 * 24));
+                
+                lamaDirawatInput.value = dayDiff >= 0 ? (dayDiff === 0 ? 1 : dayDiff) : '';
+                return;
+            }
+        }
+        lamaDirawatInput.value = '';
     }
 
     tglMasukInput.addEventListener('change', updateLamaDirawat);
     tglKeluarInput.addEventListener('change', updateLamaDirawat);
+    tglMasukInput.addEventListener('input', updateLamaDirawat);
+    tglKeluarInput.addEventListener('input', updateLamaDirawat);
 
     dpjpUtamaSearch.addEventListener('input', function () {
         const keyword = this.value.trim().toLowerCase();
