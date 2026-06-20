@@ -13,6 +13,28 @@ include __DIR__ . '/registrasi_helpers.php';
 ensureRegistrasiSchema($koneksi);
 
 // ==========================================
+// PROSES HAPUS REGISTRASI
+// ==========================================
+$isAdmin = ($_SESSION['role'] ?? 'admin') === 'admin';
+if (isset($_GET['action']) && $_GET['action'] === 'delete_reg' && isset($_GET['id']) && $isAdmin) {
+    $delId = (int)$_GET['id'];
+    mysqli_query($koneksi, "DELETE FROM tabel_resume_medis WHERE registrasi_id = $delId");
+    if (mysqli_query($koneksi, "DELETE FROM tabel_registrasi WHERE id = $delId")) {
+        echo "<script>alert('Data registrasi berhasil dihapus.'); window.location.href='/form/eresume';</script>";
+        exit;
+    }
+}
+
+if (isset($_GET['action']) && $_GET['action'] === 'delete_res' && isset($_GET['id']) && $isAdmin) {
+    $delId = (int)$_GET['id'];
+    mysqli_query($koneksi, "DELETE FROM tabel_resume_icd WHERE resume_id = $delId");
+    if (mysqli_query($koneksi, "DELETE FROM tabel_resume_medis WHERE id = $delId")) {
+        echo "<script>alert('Data E-Resume berhasil dihapus.'); window.location.href='/form/eresume';</script>";
+        exit;
+    }
+}
+
+// ==========================================
 // 2. AMBIL DATA DARI TABEL
 // ==========================================
 $limit = 10;
@@ -132,9 +154,13 @@ if (!$registrasiResult || !$result) {
                                 </td>
                                 <td>
                                     <?php if (!empty($row['resume_id'])): ?>
-                                        <a href="/form/detail_resume?id=<?= (int) $row['resume_id'] ?>" class="btn btn-sm btn-outline-primary">Lihat E-Resume</a>
+                                        <a href="/form/detail_resume?id=<?= (int) $row['resume_id'] ?>" class="btn btn-sm btn-outline-primary mb-1">Lihat E-Resume</a>
                                     <?php else: ?>
-                                        <a href="/form/tambah_resume?registrasi_id=<?= (int) $row['id'] ?>" class="btn btn-sm btn-primary">Buat E-Resume</a>
+                                        <a href="/form/tambah_resume?registrasi_id=<?= (int) $row['id'] ?>" class="btn btn-sm btn-primary mb-1">Buat E-Resume</a>
+                                    <?php endif; ?>
+                                    
+                                    <?php if ($isAdmin): ?>
+                                        <a href="/form/eresume?action=delete_reg&id=<?= (int) $row['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Hapus Registrasi? Data E-Resume terkait juga akan ikut terhapus!');">Hapus</a>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -182,6 +208,9 @@ if (!$registrasiResult || !$result) {
                                 <td>
                                     <a href="/form/detail_resume?id=<?= (int) $row['id'] ?>" class="btn btn-sm btn-outline-primary">Lihat Detail</a>
                                     <a href="/form/tambah_resume?id=<?= (int) $row['id'] ?>" class="btn btn-sm btn-outline-warning ms-1">Edit</a>
+                                    <?php if ($isAdmin): ?>
+                                        <a href="/form/eresume?action=delete_res&id=<?= (int) $row['id'] ?>" class="btn btn-sm btn-outline-danger ms-1" onclick="return confirm('Yakin hapus E-Resume ini?');">Hapus</a>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                             <?php

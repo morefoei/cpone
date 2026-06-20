@@ -23,25 +23,62 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
     }
 }
 
-// Proses Tambah User
+// Ambil Data Edit Jika Ada
+$editId = 0;
+$editData = null;
+if (isset($_GET['action']) && $_GET['action'] === 'edit' && isset($_GET['id'])) {
+    $editId = (int)$_GET['id'];
+    try {
+        $res = mysqli_query($koneksi, "SELECT * FROM tabel_users WHERE id = $editId");
+        if ($res && mysqli_num_rows($res) > 0) {
+            $editData = mysqli_fetch_assoc($res);
+        }
+    } catch (Exception $e) {
+        // Abaikan sementara jika gagal
+    }
+}
+
+// Proses Tambah / Update User
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $post_id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
     $username = mysqli_real_escape_string($koneksi, trim($_POST['username']));
     $nama_lengkap = mysqli_real_escape_string($koneksi, trim($_POST['nama_lengkap']));
     $password = $_POST['password'];
     $role = $_POST['role'] === 'admin' ? 'admin' : 'rekam medis';
 
     // Cek apakah username sudah ada
-    $cek = mysqli_query($koneksi, "SELECT id FROM tabel_users WHERE username = '$username'");
+    $cek = mysqli_query($koneksi, "SELECT id FROM tabel_users WHERE username = '$username' AND id != $post_id");
     if (mysqli_num_rows($cek) > 0) {
         $error = "Username '$username' sudah terdaftar. Silakan gunakan yang lain.";
     } else {
-        $hash = password_hash($password, PASSWORD_DEFAULT);
-        $query = "INSERT INTO tabel_users (username, password, nama_lengkap, role) VALUES ('$username', '$hash', '$nama_lengkap', '$role')";
+        $sqlPass = "";
+        if (!empty($password)) {
+            $hash = password_hash($password, PASSWORD_DEFAULT);
+            $sqlPass = ", password = '$hash'";
+        }
         
-        if (mysqli_query($koneksi, $query)) {
-            $message = "User '$username' berhasil ditambahkan!";
+        if ($post_id > 0) {
+            // Jika password kosong, jangan update password
+            $query = "UPDATE tabel_users SET username='$username', nama_lengkap='$nama_lengkap', role='$role' $sqlPass WHERE id = $post_id";
+            $successMsg = "User '$username' berhasil diupdate!";
         } else {
-            $error = "Gagal menambahkan user: " . mysqli_error($koneksi);
+            // Jika tambah baru, password wajib diisi. (HTML attribute 'required' mencegah password kosong, tapi bisa lolos)
+            if (empty($password)) {
+                $error = "Password wajib diisi untuk pengguna baru.";
+            } else {
+                $hash = password_hash($password, PASSWORD_DEFAULT);
+                $query = "INSERT INTO tabel_users (username, password, nama_lengkap, role) VALUES ('$username', '$hash', '$nama_lengkap', '$role')";
+                $successMsg = "User '$username' berhasil ditambahkan!";
+            }
+        }
+        
+        if (empty($error)) {
+            if (mysqli_query($koneksi, $query)) {
+                $message = $successMsg;
+                $editData = null; // Clear edit form after success
+            } else {
+                $error = "Gagal menyimpan user: " . mysqli_error($koneksi);
+            }
         }
     }
 }
@@ -99,28 +136,36 @@ try {
     <div class="row">
         <div class="col-md-4 mb-4">
             <div class="panel">
-                <h5 class="mb-4">Tambah User Baru</h5>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="mb-0"><?= $editData ? 'Edit User' : 'Tambah User Baru' ?></h5>
+                    <?php if ($editData): ?>
+                        <a href="/users" class="btn btn-sm btn-outline-secondary">Batal Edit</a>
+                    <?php endif; ?>
+                </div>
                 <form method="POST">
+                    <?php if ($editData): ?>
+                        <input type="hidden" name="id" value="<?= $editData['id'] ?>">
+                    <?php endif; ?>
                     <div class="mb-3">
                         <label class="form-label">Nama Lengkap</label>
-                        <input type="text" name="nama_lengkap" class="form-control" required>
+                        <input type="text" name="nama_lengkap" class="form-control" value="<?= htmlspecialchars($editData['nama_lengkap'] ?? '') ?>" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Username</label>
-                        <input type="text" name="username" class="form-control" required>
+                        <input type="text" name="username" class="form-control" value="<?= htmlspecialchars($editData['username'] ?? '') ?>" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Password</label>
-                        <input type="password" name="password" class="form-control" required>
+                        <label class="form-label">Password <?= $editData ? '<small class="text-muted">(Kosongkan jika tidak diubah)</small>' : '' ?></label>
+                        <input type="password" name="password" class="form-control" <?= $editData ? '' : 'required' ?>>
                     </div>
                     <div class="mb-4">
                         <label class="form-label">Role Akses</label>
                         <select name="role" class="form-select" required>
-                            <option value="rekam medis">Rekam Medis (Hanya Lihat Dokter)</option>
-                            <option value="admin">Admin (Akses Penuh)</option>
+                            <option value="rekam medis" <?= ($editData['role'] ?? '') === 'rekam medis' ? 'selected' : '' ?>>Rekam Medis (Hanya Lihat Dokter)</option>
+                            <option value="admin" <?= ($editData['role'] ?? '') === 'admin' ? 'selected' : '' ?>>Admin (Akses Penuh)</option>
                         </select>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100 fw-bold">Simpan User Baru</button>
+                    <button type="submit" class="btn <?= $editData ? 'btn-success' : 'btn-primary' ?> w-100 fw-bold"><?= $editData ? 'Simpan Perubahan' : 'Simpan User Baru' ?></button>
                 </form>
             </div>
         </div>
@@ -152,10 +197,11 @@ try {
                                             <?php endif; ?>
                                         </td>
                                         <td>
+                                            <a href="/users?action=edit&id=<?= $u['id'] ?>" class="btn btn-sm btn-outline-primary me-1">Edit</a>
                                             <?php if ($u['id'] !== $_SESSION['user_id']): ?>
                                                 <a href="/users?action=delete&id=<?= $u['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Yakin ingin menghapus user ini?');">Hapus</a>
                                             <?php else: ?>
-                                                <span class="badge bg-secondary">Anda</span>
+                                                <span class="badge bg-secondary ms-1">Anda</span>
                                             <?php endif; ?>
                                         </td>
                                     </tr>

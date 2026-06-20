@@ -114,7 +114,16 @@ function multiline($value) {
 <a href="/form/detail_resume?id=<?= urlencode($id) ?>" class="btn-action btn-back no-print">← Kembali</a>
 
 <div class="page">
-    <div class="doc-code">RI 02/2020/I</div>
+    <?php
+    // Format RI tgl/tahun/suratkeberapa
+    $tgl_doc = !empty($data['tgl_keluar']) ? strtotime($data['tgl_keluar']) : time();
+    $tgl_str = date('d/m', $tgl_doc); // tgl dan bulan
+    $tahun_str = date('Y', $tgl_doc); // tahun
+    // Ambil angka dari No RM untuk "surat keberapa" (contoh: 00-00-01 jadi 1)
+    $surat_ke = (int) str_replace('-', '', $data['nomor_rm']);
+    $doc_code = "RI {$tgl_str}/{$tahun_str}/{$surat_ke}";
+    ?>
+    <div class="doc-code"><?= htmlspecialchars($doc_code) ?></div>
 
     <table class="form-table">
         <colgroup>
