@@ -372,29 +372,38 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
             </div>
             <div class="row">
-                <div class="col-md-9 mb-3">
-                    <label class="form-label">Diagnosa Sekunder (1)</label>
-                    <input type="text" name="diagnosa_sekunder_1" class="form-control" value="<?= formValue($editData, 'diagnosa_sekunder_1') ?>">
-                </div>
-                <div class="col-md-3 mb-3">
-                    <label class="form-label">Kode ICD</label>
-                    <input type="text" name="icd_sekunder_1" class="form-control" value="<?= formValue($editData, 'icd_sekunder_1') ?>">
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Diagnosa Sekunder & Kode ICD</label>
+                    <div class="d-flex gap-2 mb-2">
+                        <div class="flex-grow-1">
+                            <select id="icdSekunderSearch" class="form-select"></select>
+                        </div>
+                        <button type="button" class="btn btn-primary fw-bold" id="btnAddSekunder">Add</button>
+                    </div>
+                    <ul class="list-group mb-2" id="sekunderList">
+                        <!-- List of diseases will be added here -->
+                    </ul>
+                    <input type="hidden" name="diagnosa_sekunder_1" id="diagnosaSekunderHidden" value="<?= formValue($editData, 'diagnosa_sekunder_1') ?>">
+                    <input type="hidden" name="icd_sekunder_1" id="icdSekerunderHidden" value="<?= formValue($editData, 'icd_sekunder_1') ?>">
                 </div>
             </div>
 
             <h5 class="section-title">5. Prosedur & Pengobatan</h5>
             <div class="row">
-                <div class="col-md-8 mb-3">
-                    <label class="form-label">Prosedur / Operasi</label>
-                    <input type="text" name="prosedur_operasi" class="form-control" value="<?= formValue($editData, 'prosedur_operasi') ?>">
-                </div>
-                <div class="col-md-2 mb-3">
-                    <label class="form-label">ICD Proc 1</label>
-                    <input type="text" name="icd_prosedur_1" class="form-control" value="<?= formValue($editData, 'icd_prosedur_1') ?>">
-                </div>
-                <div class="col-md-2 mb-3">
-                    <label class="form-label">ICD Proc 2</label>
-                    <input type="text" name="icd_prosedur_2" class="form-control" value="<?= formValue($editData, 'icd_prosedur_2') ?>">
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Prosedur / Operasi & Kode ICD (ICD-9-CM / ICD-10-PCS)</label>
+                    <div class="d-flex gap-2 mb-2">
+                        <div class="flex-grow-1">
+                            <select id="icdProsedurSearch" class="form-select"></select>
+                        </div>
+                        <button type="button" class="btn btn-success fw-bold" id="btnAddProsedur">Add</button>
+                    </div>
+                    <ul class="list-group mb-2" id="prosedurList">
+                        <!-- List of procedures will be added here -->
+                    </ul>
+                    <input type="hidden" name="prosedur_operasi" id="prosedurHidden" value="<?= formValue($editData, 'prosedur_operasi') ?>">
+                    <input type="hidden" name="icd_prosedur_1" id="icdProsedurHidden" value="<?= formValue($editData, 'icd_prosedur_1') ?>">
+                    <input type="hidden" name="icd_prosedur_2" value="<?= formValue($editData, 'icd_prosedur_2') ?>">
                 </div>
             </div>
             <div class="mb-3">
@@ -570,66 +579,152 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
         });
 
-        let diagnosaData = [];
-
-        // Parsing existing data
-        const existingDiagnosa = $('#diagnosaUtamaHidden').val();
-        const existingIcd = $('#icdUtamaHidden').val();
-        
-        if (existingDiagnosa) {
-            const diagArray = existingDiagnosa.split(' ; ');
-            const icdArray = existingIcd ? existingIcd.split(' ; ') : [];
-            for (let i = 0; i < diagArray.length; i++) {
-                if (diagArray[i].trim() !== '') {
-                    diagnosaData.push({
-                        code: icdArray[i] ? icdArray[i].trim() : '',
-                        name: diagArray[i].trim()
-                    });
-                }
+        $('#icdSekunderSearch').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Cari Kode ICD / Penyakit (ketik min. 3 huruf)...',
+            minimumInputLength: 3,
+            ajax: {
+                url: 'https://clinicaltables.nlm.nih.gov/api/icd10cm/v3/search',
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return {
+                        terms: params.term,
+                        sf: 'code,name',
+                        df: 'code,name'
+                    };
+                },
+                processResults: function (data) {
+                    return {
+                        results: data[3].map(function(item) {
+                            return {
+                                id: item[0],
+                                text: item[0] + ' - ' + item[1],
+                                code: item[0],
+                                name: item[1]
+                            };
+                        })
+                    };
+                },
+                cache: true
             }
-            renderDiagnosaList();
+        });
+
+        $('#icdProsedurSearch').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Cari Kode Prosedur / Operasi (ketik min. 3 huruf)...',
+            minimumInputLength: 3,
+            ajax: {
+                url: 'https://clinicaltables.nlm.nih.gov/api/icd10pcs/v3/search',
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return {
+                        terms: params.term,
+                        sf: 'code,name',
+                        df: 'code,name'
+                    };
+                },
+                processResults: function (data) {
+                    return {
+                        results: data[3].map(function(item) {
+                            return {
+                                id: item[0],
+                                text: item[0] + ' - ' + item[1],
+                                code: item[0],
+                                name: item[1]
+                            };
+                        })
+                    };
+                },
+                cache: true
+            }
+        });
+
+        let diagnosaData = [];
+        let sekunderData = [];
+        let prosedurData = [];
+
+        // Helper to load existing data
+        function loadExistingData(diagStr, icdStr, targetArr, renderFunc) {
+            if (diagStr) {
+                const diagArray = diagStr.split(' ; ');
+                const icdArray = icdStr ? icdStr.split(' ; ') : [];
+                for (let i = 0; i < diagArray.length; i++) {
+                    if (diagArray[i].trim() !== '') {
+                        targetArr.push({
+                            code: icdArray[i] ? icdArray[i].trim() : '',
+                            name: diagArray[i].trim()
+                        });
+                    }
+                }
+                renderFunc();
+            }
         }
 
+        // Parsing existing data
+        loadExistingData($('#diagnosaUtamaHidden').val(), $('#icdUtamaHidden').val(), diagnosaData, renderDiagnosaList);
+        loadExistingData($('#diagnosaSekunderHidden').val(), $('#icdSekerunderHidden').val(), sekunderData, renderSekunderList);
+        loadExistingData($('#prosedurHidden').val(), $('#icdProsedurHidden').val(), prosedurData, renderProsedurList);
+        
         $('#btnAddDiagnosa').click(function() {
             const selectedData = $('#icdSearch').select2('data');
             if (selectedData && selectedData.length > 0) {
                 const item = selectedData[0];
-                diagnosaData.push({
-                    code: item.code || '',
-                    name: item.name || item.text
-                });
+                diagnosaData.push({ code: item.code || '', name: item.name || item.text });
                 $('#icdSearch').val(null).trigger('change');
                 renderDiagnosaList();
-            } else {
-                alert('Silakan cari dan pilih Diagnosa/ICD terlebih dahulu.');
-            }
+            } else { alert('Silakan cari dan pilih Diagnosa terlebih dahulu.'); }
         });
 
-        window.removeDiagnosa = function(index) {
-            diagnosaData.splice(index, 1);
-            renderDiagnosaList();
-        };
+        $('#btnAddSekunder').click(function() {
+            const selectedData = $('#icdSekunderSearch').select2('data');
+            if (selectedData && selectedData.length > 0) {
+                const item = selectedData[0];
+                sekunderData.push({ code: item.code || '', name: item.name || item.text });
+                $('#icdSekunderSearch').val(null).trigger('change');
+                renderSekunderList();
+            } else { alert('Silakan cari dan pilih Diagnosa Sekunder terlebih dahulu.'); }
+        });
 
-        function renderDiagnosaList() {
-            $('#diagnosaList').empty();
+        $('#btnAddProsedur').click(function() {
+            const selectedData = $('#icdProsedurSearch').select2('data');
+            if (selectedData && selectedData.length > 0) {
+                const item = selectedData[0];
+                prosedurData.push({ code: item.code || '', name: item.name || item.text });
+                $('#icdProsedurSearch').val(null).trigger('change');
+                renderProsedurList();
+            } else { alert('Silakan cari dan pilih Prosedur terlebih dahulu.'); }
+        });
+
+        window.removeDiagnosa = function(index) { diagnosaData.splice(index, 1); renderDiagnosaList(); };
+        window.removeSekunder = function(index) { sekunderData.splice(index, 1); renderSekunderList(); };
+        window.removeProsedur = function(index) { prosedurData.splice(index, 1); renderProsedurList(); };
+
+        function renderList(dataArr, listElementId, hiddenDiagId, hiddenIcdId, removeFuncName) {
+            $('#' + listElementId).empty();
             let diagStrings = [];
             let icdStrings = [];
 
-            diagnosaData.forEach(function(item, index) {
+            dataArr.forEach(function(item, index) {
                 const displayCode = item.code ? escapeHtml(item.code) + ' - ' : '';
-                $('#diagnosaList').append(
+                $('#' + listElementId).append(
                     '<li class="list-group-item d-flex justify-content-between align-items-center">' +
                     '<span><strong>' + escapeHtml(item.code) + '</strong> ' + (item.code ? '-' : '') + ' ' + escapeHtml(item.name) + '</span>' +
-                    '<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeDiagnosa(' + index + ')">Hapus</button>' +
+                    '<button type="button" class="btn btn-sm btn-outline-danger" onclick="' + removeFuncName + '(' + index + ')">Hapus</button>' +
                     '</li>'
                 );
                 diagStrings.push(item.name);
                 icdStrings.push(item.code);
             });
 
-            $('#diagnosaUtamaHidden').val(diagStrings.join(' ; '));
-            $('#icdUtamaHidden').val(icdStrings.join(' ; '));
+            $('#' + hiddenDiagId).val(diagStrings.join(' ; '));
+            $('#' + hiddenIcdId).val(icdStrings.join(' ; '));
         }
+
+        function renderDiagnosaList() { renderList(diagnosaData, 'diagnosaList', 'diagnosaUtamaHidden', 'icdUtamaHidden', 'removeDiagnosa'); }
+        function renderSekunderList() { renderList(sekunderData, 'sekunderList', 'diagnosaSekunderHidden', 'icdSekerunderHidden', 'removeSekunder'); }
+        function renderProsedurList() { renderList(prosedurData, 'prosedurList', 'prosedurHidden', 'icdProsedurHidden', 'removeProsedur'); }
     });
 </script>
 </body>
