@@ -207,6 +207,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Form E-Resume Medis Lengkap</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
     <style>
         body { background-color: #f0f2f5; }
         .form-container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-width: 900px; margin: auto; }
@@ -354,13 +356,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
             </div>
             <div class="row">
-                <div class="col-md-9 mb-3">
-                    <label class="form-label text-danger fw-bold">Diagnosa Utama</label>
-                    <input type="text" name="diagnosa_utama" class="form-control border-danger" value="<?= formValue($editData, 'diagnosa_utama') ?>" required>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <label class="form-label text-danger fw-bold">Kode ICD</label>
-                    <input type="text" name="icd_utama" class="form-control border-danger" value="<?= formValue($editData, 'icd_utama') ?>">
+                <div class="col-md-12 mb-3">
+                    <label class="form-label text-danger fw-bold">Diagnosa Utama & Kode ICD</label>
+                    <div class="d-flex gap-2 mb-2">
+                        <div class="flex-grow-1">
+                            <select id="icdSearch" class="form-select"></select>
+                        </div>
+                        <button type="button" class="btn btn-danger fw-bold" id="btnAddDiagnosa">Add</button>
+                    </div>
+                    <ul class="list-group mb-2" id="diagnosaList">
+                        <!-- List of diseases will be added here -->
+                    </ul>
+                    <input type="hidden" name="diagnosa_utama" id="diagnosaUtamaHidden" value="<?= formValue($editData, 'diagnosa_utama') ?>" required>
+                    <input type="hidden" name="icd_utama" id="icdUtamaHidden" value="<?= formValue($editData, 'icd_utama') ?>">
                 </div>
             </div>
             <div class="row">
@@ -441,7 +449,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </div>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     const registrasiData = <?= json_encode($registrasiPreviewList, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
     const resumePasienData = <?= json_encode([
@@ -527,6 +537,100 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     registrasiSelect.addEventListener('change', updateRegistrasiFields);
     updateRegistrasiFields();
     updateDpjpUtamaPreview();
+
+    $(document).ready(function() {
+        $('#icdSearch').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Cari Kode ICD / Penyakit (ketik min. 3 huruf)...',
+            minimumInputLength: 3,
+            ajax: {
+                url: 'https://clinicaltables.nlm.nih.gov/api/icd10cm/v3/search',
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return {
+                        terms: params.term,
+                        sf: 'code,name',
+                        df: 'code,name'
+                    };
+                },
+                processResults: function (data) {
+                    return {
+                        results: data[3].map(function(item) {
+                            return {
+                                id: item[0],
+                                text: item[0] + ' - ' + item[1],
+                                code: item[0],
+                                name: item[1]
+                            };
+                        })
+                    };
+                },
+                cache: true
+            }
+        });
+
+        let diagnosaData = [];
+
+        // Parsing existing data
+        const existingDiagnosa = $('#diagnosaUtamaHidden').val();
+        const existingIcd = $('#icdUtamaHidden').val();
+        
+        if (existingDiagnosa) {
+            const diagArray = existingDiagnosa.split(' ; ');
+            const icdArray = existingIcd ? existingIcd.split(' ; ') : [];
+            for (let i = 0; i < diagArray.length; i++) {
+                if (diagArray[i].trim() !== '') {
+                    diagnosaData.push({
+                        code: icdArray[i] ? icdArray[i].trim() : '',
+                        name: diagArray[i].trim()
+                    });
+                }
+            }
+            renderDiagnosaList();
+        }
+
+        $('#btnAddDiagnosa').click(function() {
+            const selectedData = $('#icdSearch').select2('data');
+            if (selectedData && selectedData.length > 0) {
+                const item = selectedData[0];
+                diagnosaData.push({
+                    code: item.code || '',
+                    name: item.name || item.text
+                });
+                $('#icdSearch').val(null).trigger('change');
+                renderDiagnosaList();
+            } else {
+                alert('Silakan cari dan pilih Diagnosa/ICD terlebih dahulu.');
+            }
+        });
+
+        window.removeDiagnosa = function(index) {
+            diagnosaData.splice(index, 1);
+            renderDiagnosaList();
+        };
+
+        function renderDiagnosaList() {
+            $('#diagnosaList').empty();
+            let diagStrings = [];
+            let icdStrings = [];
+
+            diagnosaData.forEach(function(item, index) {
+                const displayCode = item.code ? escapeHtml(item.code) + ' - ' : '';
+                $('#diagnosaList').append(
+                    '<li class="list-group-item d-flex justify-content-between align-items-center">' +
+                    '<span><strong>' + escapeHtml(item.code) + '</strong> ' + (item.code ? '-' : '') + ' ' + escapeHtml(item.name) + '</span>' +
+                    '<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeDiagnosa(' + index + ')">Hapus</button>' +
+                    '</li>'
+                );
+                diagStrings.push(item.name);
+                icdStrings.push(item.code);
+            });
+
+            $('#diagnosaUtamaHidden').val(diagStrings.join(' ; '));
+            $('#icdUtamaHidden').val(icdStrings.join(' ; '));
+        }
+    });
 </script>
 </body>
 </html>
