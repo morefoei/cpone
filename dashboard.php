@@ -142,36 +142,35 @@ if ($result && mysqli_num_rows($result) > 0) {
 
 <!-- Template Hidden untuk Export Excel -->
 <div id="excelTemplateWrapper" style="display: none;">
-    <table id="excelTemplate">
+    <table id="excelTemplate" border="1" style="border-collapse: collapse;">
         <tr>
-            <td rowspan="3" colspan="1" align="center" valign="middle">
+            <td rowspan="3" align="center" valign="middle" style="border: 1px solid black; width: 120px;">
                 <!-- Gunakan URL absolute agar gambar tampil di Excel -->
-                <img src="<?= (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . $_SERVER['HTTP_HOST'] ?>/assets/img/logo-ueu-unggul.png" width="80" height="80">
+                <img src="<?= (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . $_SERVER['HTTP_HOST'] ?>/assets/img/logo-ueu-unggul.png" width="100" height="100">
             </td>
-            <td colspan="2" style="font-size: 16px; font-weight: bold; vertical-align: middle;">LAPORAN 10 BESAR DIAGNOSA PENYAKIT</td>
+            <td colspan="2" style="border: 1px solid black; font-size: 16px; font-weight: bold; vertical-align: middle;">LAPORAN 10 BESAR DIAGNOSA PENYAKIT</td>
         </tr>
         <tr>
-            <td colspan="2" style="font-size: 14px; font-weight: bold;">Universitas Esa Unggul</td>
+            <td colspan="2" style="border: 1px solid black; font-size: 14px; font-weight: bold; vertical-align: middle;">Universitas Esa Unggul</td>
         </tr>
         <tr>
-            <td colspan="2" style="font-size: 12px; color: #555;">Periode: Seluruh Waktu</td>
+            <td colspan="2" style="border: 1px solid black; font-size: 12px; color: #555; vertical-align: middle;">Periode: Seluruh Waktu</td>
         </tr>
-        <tr><td colspan="3"></td></tr>
         <tr>
-            <th style="background-color: #f8f9fa; border: 1px solid #ddd; padding: 8px;">Peringkat</th>
-            <th style="background-color: #f8f9fa; border: 1px solid #ddd; padding: 8px;">Diagnosa Penyakit (ICD-10)</th>
-            <th style="background-color: #f8f9fa; border: 1px solid #ddd; padding: 8px;">Jumlah Kasus</th>
+            <th style="border: 1px solid black; font-weight: bold; font-size: 14px; text-align: center; vertical-align: middle; padding: 5px;">Peringkat</th>
+            <th style="border: 1px solid black; font-weight: bold; font-size: 14px; text-align: center; vertical-align: middle; padding: 5px; width: 300px;">Diagnosa Penyakit (ICD-10)</th>
+            <th style="border: 1px solid black; font-weight: bold; font-size: 14px; text-align: center; vertical-align: middle; padding: 5px; width: 150px;">Jumlah Kasus</th>
         </tr>
         <?php if (count($top10) > 0): ?>
             <?php foreach ($top10 as $index => $row): ?>
                 <tr>
-                    <td align="center" style="border: 1px solid #ddd; padding: 5px;"><?= $index + 1 ?></td>
-                    <td style="border: 1px solid #ddd; padding: 5px;"><?= htmlspecialchars($row['penyakit']) ?></td>
-                    <td align="center" style="border: 1px solid #ddd; padding: 5px;"><?= $row['jumlah'] ?> Pasien</td>
+                    <td align="center" style="border: 1px solid black; text-align: center; vertical-align: middle; padding: 5px;"><?= $index + 1 ?></td>
+                    <td style="border: 1px solid black; vertical-align: middle; padding: 5px;"><?= htmlspecialchars($row['penyakit']) ?></td>
+                    <td align="center" style="border: 1px solid black; text-align: center; vertical-align: middle; padding: 5px;"><?= $row['jumlah'] ?> Pasien</td>
                 </tr>
             <?php endforeach; ?>
         <?php else: ?>
-            <tr><td colspan="3" align="center" style="border: 1px solid #ddd; padding: 5px;">Belum ada data</td></tr>
+            <tr><td colspan="3" align="center" style="border: 1px solid black; text-align: center; padding: 5px;">Belum ada data</td></tr>
         <?php endif; ?>
     </table>
 </div>
@@ -290,7 +289,21 @@ function exportTablePDF() {
 
 function exportChartPNG() {
     let canvas = document.getElementById('barChart');
-    let imgURL = canvas.toDataURL("image/png");
+    
+    // Buat canvas sementara dengan background putih agar tidak transparan saat di-export
+    let newCanvas = document.createElement('canvas');
+    newCanvas.width = canvas.width;
+    newCanvas.height = canvas.height;
+    let ctx = newCanvas.getContext('2d');
+    
+    // Isi dengan warna putih solid
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, newCanvas.width, newCanvas.height);
+    
+    // Gambar grafik dari web ke atas canvas putih ini
+    ctx.drawImage(canvas, 0, 0);
+    
+    let imgURL = newCanvas.toDataURL("image/png");
     let link = document.createElement('a');
     link.download = 'Grafik_10_Besar_Penyakit.png';
     link.href = imgURL;
