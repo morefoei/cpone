@@ -61,6 +61,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         tgl_masuk = '$tgl_masuk', 
                         penyakit = '$penyakit' 
                       WHERE id = $post_id";
+            
+            // Cascade update ke tabel_resume_medis agar tersinkronisasi
+            $queryCascade = "UPDATE tabel_resume_medis SET
+                                nama_pasien = '$nama_pasien',
+                                tanggal_lahir = $tgl_lhr_sql,
+                                jenis_kelamin = '$jenis_kelamin',
+                                tgl_masuk = '$tgl_masuk',
+                                diagnosa_masuk = '$penyakit'
+                             WHERE registrasi_id = $post_id";
+            mysqli_query($koneksi, $queryCascade);
+            
             $msg = 'Data registrasi berhasil diperbarui!';
         } else {
             $query = "INSERT INTO tabel_registrasi (

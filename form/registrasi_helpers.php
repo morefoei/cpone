@@ -17,21 +17,7 @@ function ensureRegistrasiSchema($koneksi) {
         mysqli_query($koneksi, "ALTER TABLE tabel_resume_medis ADD COLUMN registrasi_id INT NULL AFTER id");
     }
 
-    mysqli_query($koneksi, "INSERT INTO tabel_registrasi (nomor_rm, nama_pasien, tanggal_lahir, jenis_kelamin, tgl_masuk, penyakit)
-        SELECT trm.nomor_rm, trm.nama_pasien, NULLIF(trm.tanggal_lahir, ''), trm.jenis_kelamin, trm.tgl_masuk, trm.diagnosa_masuk
-        FROM tabel_resume_medis trm
-        WHERE COALESCE(trm.diagnosa_utama, '') = ''
-          AND COALESCE(trm.diagnosa_masuk, '') <> ''
-          AND COALESCE(trm.nomor_rm, '') <> ''
-          AND COALESCE(trm.nama_pasien, '') <> ''
-          AND COALESCE(trm.tgl_masuk, '') <> ''
-          AND NOT EXISTS (
-              SELECT 1
-              FROM tabel_registrasi r
-              WHERE r.nomor_rm = trm.nomor_rm
-                AND r.nama_pasien = trm.nama_pasien
-                AND r.tgl_masuk = trm.tgl_masuk
-          )");
+    // Migration script dihapus karena sudah tidak diperlukan dan memicu duplikasi data
 }
 
 function getRegistrasiList($koneksi) {
