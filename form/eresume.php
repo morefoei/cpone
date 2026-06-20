@@ -18,9 +18,27 @@ ensureRegistrasiSchema($koneksi);
 $isAdmin = ($_SESSION['role'] ?? 'admin') === 'admin';
 if (isset($_GET['action']) && $_GET['action'] === 'delete_reg' && isset($_GET['id']) && $isAdmin) {
     $delId = (int)$_GET['id'];
+    
+    // Cari semua E-Resume yang menempel pada Registrasi ini
+    $resQuery = mysqli_query($koneksi, "SELECT id FROM tabel_resume_medis WHERE registrasi_id = $delId");
+    if ($resQuery) {
+        while($rowRes = mysqli_fetch_assoc($resQuery)) {
+            $resId = (int)$rowRes['id'];
+            // Hapus semua ICD terkait E-Resume tersebut
+            mysqli_query($koneksi, "DELETE FROM tabel_resume_icd WHERE resume_id = $resId");
+        }
+    }
+    
+    // Hapus E-Resume terkait
     mysqli_query($koneksi, "DELETE FROM tabel_resume_medis WHERE registrasi_id = $delId");
+    
+    // Hapus Registrasi
     if (mysqli_query($koneksi, "DELETE FROM tabel_registrasi WHERE id = $delId")) {
-        echo "<script>alert('Data registrasi berhasil dihapus.'); window.location.href='/form/eresume';</script>";
+        echo "<script>alert('Data registrasi berhasil dihapus secara permanen.'); window.location.href='/form/eresume';</script>";
+        exit;
+    } else {
+        $error = mysqli_error($koneksi);
+        echo "<script>alert('Gagal menghapus: $error'); window.location.href='/form/eresume';</script>";
         exit;
     }
 }
