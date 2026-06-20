@@ -332,7 +332,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <div class="col-md-6 mb-3">
                     <input type="hidden" name="dpjp_utama" id="dpjpUtamaName">
                     <label class="form-label">Preview Tanda Tangan & Barcode DPJP Utama</label>
-                    <div id="dpjpUtamaPreview" class="border rounded p-3 bg-light d-flex align-items-center justify-content-center" style="min-height: 120px; flex-direction: column;">
+                    <div id="dpjpUtamaPreview" class="doctor-preview text-center d-flex align-items-center justify-content-center flex-column">
                         <span class="text-muted text-center" id="dpjpUtamaPreviewText">Pilih DPJP Utama dari master dokter.</span>
                     </div>
                     <small class="text-muted mt-2 d-block">Pilihan ini dipakai untuk tanda tangan dan barcode di cetak resume.</small>
