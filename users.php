@@ -46,7 +46,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$userList = mysqli_query($koneksi, "SELECT id, username, nama_lengkap, role FROM tabel_users ORDER BY id DESC");
+$userList = false;
+$dbError = '';
+try {
+    $userList = mysqli_query($koneksi, "SELECT id, username, nama_lengkap, role FROM tabel_users ORDER BY id DESC");
+} catch (Exception $e) {
+    $dbError = "Terjadi kesalahan Database: Kolom 'role' belum ada. Mohon jalankan perintah SQL ALTER TABLE seperti yang diinstruksikan.";
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -79,6 +85,15 @@ $userList = mysqli_query($koneksi, "SELECT id, username, nama_lengkap, role FROM
 
     <?php if ($error !== ''): ?>
         <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
+    <?php endif; ?>
+
+    <?php if ($dbError !== ''): ?>
+        <div class="alert alert-danger shadow-sm border-danger">
+            <h5 class="fw-bold">Peringatan: Database Belum Diupdate!</h5>
+            <?= htmlspecialchars($dbError) ?><br><br>
+            Silakan buka phpMyAdmin dan jalankan perintah SQL ini:<br>
+            <code>ALTER TABLE `tabel_users` ADD COLUMN `role` VARCHAR(20) NOT NULL DEFAULT 'admin';</code>
+        </div>
     <?php endif; ?>
 
     <div class="row">
