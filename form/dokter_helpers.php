@@ -63,7 +63,7 @@ function dokterLabel($dokter) {
 function dokterQrData($dokter, $namaManual = '') {
     if (!$dokter) {
         $nama = $namaManual ? $namaManual : 'Tanda Tangan Elektronik';
-        return "Tanda Tangan Elektronik Sah\n---------------------------\nNama: $nama\n---------------------------\nSistem E-Resume Medis";
+        return "Ditandatangani secara elektronik oleh:\nNama: $nama\nSistem E-Resume Medis";
     }
 
     $nama = $dokter['nama_dokter'] ?? '-';
@@ -72,7 +72,7 @@ function dokterQrData($dokter, $namaManual = '') {
     $spesialis = trim($dokter['spesialis'] ?? '');
     $jenisLengkap = $jenis === 'Spesialis' && $spesialis !== '' ? "$jenis - $spesialis" : $jenis;
 
-    return "Tanda Tangan Elektronik Sah\n---------------------------\nNama: $nama\nNomor: $nomor\nKeahlian: $jenisLengkap\n---------------------------\nSistem E-Resume Medis";
+    return "Ditandatangani secara elektronik oleh:\nNama: $nama\nSIP/No: $nomor\nBidang: $jenisLengkap\nSistem E-Resume Medis";
 }
 
 function code128BSvg($text, $height = 82, $module = 1.25) {
@@ -121,10 +121,11 @@ function code128BSvg($text, $height = 82, $module = 1.25) {
     return '<svg class="barcode" xmlns="http://www.w3.org/2000/svg" width="' . $x . '" height="' . $height . '" viewBox="0 0 ' . $x . ' ' . $height . '" role="img" aria-label="Barcode dokter">' . $bars . '</svg>';
 }
 
-function qrCodeImg($text, $size = 100) {
+function qrCodeImg($text, $displaySize = 100) {
     if (empty(trim($text))) {
         return '';
     }
-    $encodedUrl = urlencode($text);
-    return '<img class="barcode qrcode" src="https://api.qrserver.com/v1/create-qr-code/?size=' . $size . 'x' . $size . '&data=' . $encodedUrl . '" alt="QR Code" style="width:' . $size . 'px; height:' . $size . 'px; object-fit: contain;">';
+    // Fetch a high resolution image to prevent pixelation when scanning
+    $encodedUrl = rawurlencode($text);
+    return '<img class="barcode qrcode" src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' . $encodedUrl . '&margin=1" alt="QR Code" style="width:' . $displaySize . 'px; height:' . $displaySize . 'px; object-fit: contain;">';
 }
