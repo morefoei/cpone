@@ -137,6 +137,43 @@ if ($result && mysqli_num_rows($result) > 0) {
             </div>
         </div>
     </div>
+    </div>
+</div>
+
+<!-- Template Hidden untuk Export Excel -->
+<div id="excelTemplateWrapper" style="display: none;">
+    <table id="excelTemplate">
+        <tr>
+            <td rowspan="3" colspan="1" align="center" valign="middle">
+                <!-- Gunakan URL absolute agar gambar tampil di Excel -->
+                <img src="<?= (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . $_SERVER['HTTP_HOST'] ?>/assets/img/logo-ueu-unggul.png" width="80" height="80">
+            </td>
+            <td colspan="2" style="font-size: 16px; font-weight: bold; vertical-align: middle;">LAPORAN 10 BESAR DIAGNOSA PENYAKIT</td>
+        </tr>
+        <tr>
+            <td colspan="2" style="font-size: 14px; font-weight: bold;">Universitas Esa Unggul</td>
+        </tr>
+        <tr>
+            <td colspan="2" style="font-size: 12px; color: #555;">Periode: Seluruh Waktu</td>
+        </tr>
+        <tr><td colspan="3"></td></tr>
+        <tr>
+            <th style="background-color: #f8f9fa; border: 1px solid #ddd; padding: 8px;">Peringkat</th>
+            <th style="background-color: #f8f9fa; border: 1px solid #ddd; padding: 8px;">Diagnosa Penyakit (ICD-10)</th>
+            <th style="background-color: #f8f9fa; border: 1px solid #ddd; padding: 8px;">Jumlah Kasus</th>
+        </tr>
+        <?php if (count($top10) > 0): ?>
+            <?php foreach ($top10 as $index => $row): ?>
+                <tr>
+                    <td align="center" style="border: 1px solid #ddd; padding: 5px;"><?= $index + 1 ?></td>
+                    <td style="border: 1px solid #ddd; padding: 5px;"><?= htmlspecialchars($row['penyakit']) ?></td>
+                    <td align="center" style="border: 1px solid #ddd; padding: 5px;"><?= $row['jumlah'] ?> Pasien</td>
+                </tr>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <tr><td colspan="3" align="center" style="border: 1px solid #ddd; padding: 5px;">Belum ada data</td></tr>
+        <?php endif; ?>
+    </table>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -215,9 +252,20 @@ document.addEventListener("DOMContentLoaded", function() {
 
 // Export Functions
 function exportTableExcel() {
-    let table = document.getElementById('tablePenyakit');
-    let wb = XLSX.utils.table_to_book(table, {sheet: "Top 10 Penyakit"});
-    XLSX.writeFile(wb, "Top_10_Diagnosa_Penyakit.xlsx");
+    let table = document.getElementById('excelTemplate');
+    
+    // Konversi tabel HTML ke format Excel (.xls)
+    let uri = 'data:application/vnd.ms-excel;base64,';
+    let template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>';
+    
+    let base64 = function(s) { return window.btoa(unescape(encodeURIComponent(s))) };
+    let format = function(s, c) { return s.replace(/{(\w+)}/g, function(m, p) { return c[p]; }) };
+    
+    let ctx = { worksheet: '10 Besar Penyakit', table: table.innerHTML };
+    let link = document.createElement('a');
+    link.href = uri + base64(format(template, ctx));
+    link.download = 'Laporan_10_Besar_Penyakit.xls';
+    link.click();
 }
 
 function exportTablePDF() {
