@@ -93,7 +93,7 @@ $totalSelesai = mysqli_fetch_assoc($totalSelesaiResult)['total'];
 $totalRows = max($totalReg, $totalDraft, $totalSelesai);
 $totalPages = ceil($totalRows / $limit);
 
-if (!$registrasiResult || !$result) {
+if (!$registrasiResult || !$resultDraft || !$resultSelesai) {
     die("Query error: " . mysqli_error($koneksi));
 }
 ?>
