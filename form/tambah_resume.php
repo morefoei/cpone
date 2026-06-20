@@ -331,7 +331,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
                 <div class="col-md-6 mb-3">
                     <input type="hidden" name="dpjp_utama" id="dpjpUtamaName">
-                    <small class="text-muted">Pilihan ini dipakai untuk tanda tangan dan barcode di cetak resume.</small>
+                    <label class="form-label">Preview Tanda Tangan & Barcode DPJP Utama</label>
+                    <div id="dpjpUtamaPreview" class="border rounded p-3 bg-light d-flex align-items-center justify-content-center" style="min-height: 120px;">
+                        <span class="text-muted text-center" id="dpjpUtamaPreviewText">Pilih DPJP Utama dari master dokter.</span>
+                        <div id="dpjpUtamaPreviewContent" class="d-none text-center">
+                            <div id="dpjpUtamaBarcode" class="mb-2"></div>
+                            <div class="fw-bold" id="dpjpUtamaNamaTtd"></div>
+                            <small class="text-muted" id="dpjpUtamaSipTtd"></small>
+                        </div>
+                    </div>
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Rawat Bersama?</label>
@@ -442,7 +450,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <h5 class="section-title">Prosedur & Pengobatan</h5>
             <div class="row">
                 <div class="col-md-12 mb-3">
-                    <label class="form-label">Prosedur / Operasi & Kode ICD (ICD-9-CM / ICD-10-PCS)</label>
+                    <label class="form-label text-danger fw-bold">Prosedur / Operasi & Kode ICD (ICD-9-CM / ICD-10-PCS) <span class="text-danger">*</span></label>
                     <div class="d-flex gap-2 mb-2">
                         <input type="text" class="form-control border-0 border-bottom rounded-0 px-1 bg-transparent" readonly placeholder="Klik search di kanan untuk tambah prosedur ➡️">
                         <button type="button" class="btn btn-success btn-search rounded-circle shadow-sm" style="width: 38px; height: 38px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="openSearchModal('prosedur')">🔍</button>

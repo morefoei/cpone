@@ -68,12 +68,11 @@ $registrasiSql = "SELECT r.*, tr.id AS resume_id
                       WHERE registrasi_id IS NOT NULL
                       GROUP BY registrasi_id
                   ) tr ON tr.registrasi_id = r.id
+                  WHERE tr.id IS NULL
                   ORDER BY r.id DESC LIMIT $limit OFFSET $offset";
 $registrasiResult = mysqli_query($koneksi, $registrasiSql);
-$registrasiResult = mysqli_query($koneksi, $registrasiSql);
-
 // Syarat E-Resume dianggap sudah lengkap:
-$condLengkap = "(diagnosa_utama IS NOT NULL AND trim(diagnosa_utama) != '') AND (tgl_keluar IS NOT NULL AND trim(tgl_keluar) != '') AND (dpjp_utama_dokter_id IS NOT NULL AND dpjp_utama_dokter_id > 0) AND (kondisi_pulang IS NOT NULL AND trim(kondisi_pulang) != '')";
+$condLengkap = "(diagnosa_utama IS NOT NULL AND trim(diagnosa_utama) != '') AND (prosedur_operasi IS NOT NULL AND trim(prosedur_operasi) != '') AND (tgl_keluar IS NOT NULL AND trim(tgl_keluar) != '') AND (dpjp_utama_dokter_id IS NOT NULL AND dpjp_utama_dokter_id > 0) AND (kondisi_pulang IS NOT NULL AND trim(kondisi_pulang) != '')";
 
 // Ambil E-Resume Draft (Belum Lengkap)
 $sqlDraft = "SELECT * FROM tabel_resume_medis WHERE NOT ($condLengkap) ORDER BY id DESC LIMIT $limit OFFSET $offset";
@@ -84,7 +83,7 @@ $sqlSelesai = "SELECT * FROM tabel_resume_medis WHERE $condLengkap ORDER BY id D
 $resultSelesai = mysqli_query($koneksi, $sqlSelesai);
 
 // Hitung total untuk pagination
-$totalRegResult = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM tabel_registrasi");
+$totalRegResult = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM tabel_registrasi r LEFT JOIN tabel_resume_medis tr ON tr.registrasi_id = r.id WHERE tr.id IS NULL");
 $totalReg = mysqli_fetch_assoc($totalRegResult)['total'];
 
 $totalDraftResult = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM tabel_resume_medis WHERE NOT ($condLengkap)");
@@ -134,9 +133,6 @@ if (!$registrasiResult || !$resultDraft || !$resultSelesai) {
                 <a href="/form/dokter" class="btn btn-outline-secondary shadow-sm me-2">
                     Master Dokter
                 </a>
-                <a href="/form/tambah_resume" class="btn btn-primary shadow-sm me-2">
-                    Buat E-Resume
-                </a>
                 <a href="/form/export-excel" class="btn btn-success shadow-sm">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-excel me-1" viewBox="0 0 16 16">
                       <path d="M5.884 6.68a.5.5 0 1 0-.768.64L7.349 10l-2.233 2.68a.5.5 0 0 0 .768.64L8 10.781l2.116 2.539a.5.5 0 0 0 .768-.641L8.651 10l2.233-2.68a.5.5 0 0 0-.768-.64L8 9.219l-2.116-2.54z"/>
@@ -147,7 +143,8 @@ if (!$registrasiResult || !$resultDraft || !$resultSelesai) {
             </div>
         </div>
 
-        <div class="section-heading">List Registrasi</div>
+        <?php if (mysqli_num_rows($registrasiResult) > 0): ?>
+        <div class="section-heading">List Registrasi Baru (Belum E-Resume)</div>
         <div class="table-responsive mb-4">
             <table class="table table-hover table-bordered align-middle">
                 <thead class="table-light">
@@ -177,18 +174,10 @@ if (!$registrasiResult || !$resultDraft || !$resultSelesai) {
                                 <td><?= $tglMasuk ?></td>
                                 <td><?= htmlspecialchars($row['penyakit'] ?? '-') ?></td>
                                 <td>
-                                    <?php if (!empty($row['resume_id'])): ?>
-                                        <span class="badge bg-success">Sudah E-Resume</span>
-                                    <?php else: ?>
-                                        <span class="badge bg-warning text-dark">Belum E-Resume</span>
-                                    <?php endif; ?>
+                                    <span class="badge bg-warning text-dark">Belum E-Resume</span>
                                 </td>
                                 <td>
-                                    <?php if (!empty($row['resume_id'])): ?>
-                                        <a href="/form/detail_resume?id=<?= (int) $row['resume_id'] ?>" class="btn btn-sm btn-outline-primary mb-1">Lihat E-Resume</a>
-                                    <?php else: ?>
-                                        <a href="/form/tambah_resume?registrasi_id=<?= (int) $row['id'] ?>" class="btn btn-sm btn-primary mb-1">Buat E-Resume</a>
-                                    <?php endif; ?>
+                                    <a href="/form/tambah_resume?registrasi_id=<?= (int) $row['id'] ?>" class="btn btn-sm btn-primary mb-1">Buat E-Resume</a>
                                     
                                     <a href="/form/registrasi?action=edit&id=<?= (int) $row['id'] ?>" class="btn btn-sm btn-outline-warning mb-1">Edit</a>
 
@@ -198,14 +187,10 @@ if (!$registrasiResult || !$resultDraft || !$resultSelesai) {
                                 </td>
                             </tr>
                         <?php endwhile; ?>
-                    <?php else: ?>
-                        <tr>
-                            <td colspan="8" class="text-center text-muted py-3">Belum ada data registrasi.</td>
-                        </tr>
-                    <?php endif; ?>
                 </tbody>
             </table>
         </div>
+        <?php endif; ?>
 
         <div class="section-heading text-warning">List E-Resume (Draft / Belum Lengkap)</div>
         <div class="table-responsive mb-4">
@@ -232,6 +217,7 @@ if (!$registrasiResult || !$resultDraft || !$resultSelesai) {
                             if (empty($row['tgl_keluar'])) $missing[] = 'Tgl Keluar';
                             if (empty($row['dpjp_utama_dokter_id']) || $row['dpjp_utama_dokter_id'] == 0) $missing[] = 'DPJP Utama';
                             if (empty(trim($row['diagnosa_utama'] ?? ''))) $missing[] = 'Diagnosa Utama';
+                            if (empty(trim($row['prosedur_operasi'] ?? ''))) $missing[] = 'Prosedur/Operasi';
                             if (empty(trim($row['kondisi_pulang'] ?? ''))) $missing[] = 'Kondisi Pulang';
                             
                             $missingText = implode(', ', $missing);
