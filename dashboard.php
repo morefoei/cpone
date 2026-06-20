@@ -36,6 +36,10 @@ if ($result && mysqli_num_rows($result) > 0) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Chart.js untuk Grafik Batang -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS untuk Export Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- HTML2PDF untuk Export PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         body { background-color: #f4f6f9; }
         .dashboard-container { max-width: 1000px; margin: 40px auto; padding: 20px; }
@@ -62,17 +66,25 @@ if ($result && mysqli_num_rows($result) > 0) {
             <h2 class="fw-bold" style="color: #2c3e50;">📊 Dashboard Laporan</h2>
             <p class="text-muted">Statistik dan daftar 10 besar diagnosa penyakit terbanyak.</p>
         </div>
-        <button onclick="window.print()" class="btn btn-primary d-print-none shadow-sm fw-semibold">🖨️ Cetak Laporan</button>
+        <div class="d-print-none">
+            <button onclick="exportAllExcel()" class="btn btn-outline-success shadow-sm fw-semibold me-2">📥 Export All Excel</button>
+            <button onclick="exportAllPDF()" class="btn btn-outline-danger shadow-sm fw-semibold me-2">📄 Export All PDF</button>
+            <button onclick="window.print()" class="btn btn-primary shadow-sm fw-semibold">🖨️ Cetak</button>
+        </div>
     </div>
 
     <!-- Tabel 10 Besar Penyakit -->
     <div class="card">
-        <div class="card-header">
+        <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="card-title">🏆 Top 10 Diagnosa Penyakit (Berdasarkan Diagnosa Utama)</h5>
+            <div class="d-print-none">
+                <button onclick="exportTableExcel()" class="btn btn-sm btn-success">Excel</button>
+                <button onclick="exportTablePDF()" class="btn btn-sm btn-danger ms-1">PDF</button>
+            </div>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover mb-0">
+                <table class="table table-hover mb-0" id="tablePenyakit">
                     <thead>
                         <tr>
                             <th class="text-center" width="80">Peringkat</th>
@@ -113,8 +125,11 @@ if ($result && mysqli_num_rows($result) > 0) {
 
     <!-- Grafik Batang -->
     <div class="card">
-        <div class="card-header">
+        <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="card-title">📉 Grafik Batang 10 Besar Penyakit</h5>
+            <div class="d-print-none">
+                <button onclick="exportChartPNG()" class="btn btn-sm btn-primary">Export PNG</button>
+            </div>
         </div>
         <div class="card-body">
             <div class="chart-container">
@@ -197,6 +212,70 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById('barChart').parentElement.innerHTML = '<p class="text-center text-muted mt-5">Grafik tidak tersedia karena belum ada data penyakit.</p>';
     }
 });
+
+// Export Functions
+function exportTableExcel() {
+    let table = document.getElementById('tablePenyakit');
+    let wb = XLSX.utils.table_to_book(table, {sheet: "Top 10 Penyakit"});
+    XLSX.writeFile(wb, "Top_10_Diagnosa_Penyakit.xlsx");
+}
+
+function exportTablePDF() {
+    let element = document.getElementById('tablePenyakit').closest('.card');
+    
+    let opt = {
+        margin:       10,
+        filename:     'Top_10_Diagnosa_Penyakit.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    
+    // Hide buttons inside the card before exporting
+    let buttons = element.querySelectorAll('.d-print-none');
+    buttons.forEach(b => b.style.display = 'none');
+    
+    html2pdf().set(opt).from(element).save().then(() => {
+        buttons.forEach(b => b.style.display = ''); // restore
+    });
+}
+
+function exportChartPNG() {
+    let canvas = document.getElementById('barChart');
+    let imgURL = canvas.toDataURL("image/png");
+    let link = document.createElement('a');
+    link.download = 'Grafik_10_Besar_Penyakit.png';
+    link.href = imgURL;
+    link.click();
+}
+
+function exportAllExcel() {
+    exportTableExcel();
+    setTimeout(() => {
+        alert("Catatan: Hanya data tabel yang di-export ke Excel. Untuk melihat tabel dan grafik secara bersamaan, silakan gunakan 'Export All PDF'.");
+    }, 500);
+}
+
+function exportAllPDF() {
+    let element = document.querySelector('.dashboard-container');
+    
+    let opt = {
+        margin:       10,
+        filename:     'Dashboard_Laporan_Penyakit.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    
+    // Hide all print-none buttons
+    let buttons = element.querySelectorAll('.d-print-none');
+    buttons.forEach(b => b.style.display = 'none');
+    
+    html2pdf().set(opt).from(element).save().then(() => {
+        // Restore buttons
+        buttons.forEach(b => b.style.display = '');
+    });
+}
 </script>
 
 </body>
